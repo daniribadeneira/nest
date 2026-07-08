@@ -432,7 +432,7 @@
     background:var(--surface);border:1px solid var(--line);border-radius:4px;
     padding:3px 12px;flex:1;
   }
-  .browser-body{padding:40px;min-height:480px;}
+  .browser-body{padding:24px;min-height:160px;}
   .preview-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:20px 0;}
   .bordered-ribbon{border:1px solid var(--line);border-radius:10px;}
  
@@ -1147,6 +1147,14 @@ const BASE_SAMPLE_STYLE = {
   a:'color:var(--string);text-decoration:underline;cursor:default;'
 };
  
+const DEFAULT_ELEMENT_COLORS = {
+  header: {background:'var(--color-main)', textColor:'var(--color-light)'},
+  footer: {background:'var(--color-dark)', textColor:'var(--color-neutral)'},
+  button: {background:'var(--color-accent)', textColor:'var(--color-light)'},
+  a: {textColor:'var(--color-accent)'},
+  p: {textColor:'var(--color-neutral)'}
+};
+ 
 const styleState = {};
 let currentStyleKey = null;
  
@@ -1159,8 +1167,12 @@ function renderStyleElementSelect(){
   `).join('');
 }
  
+function getEffectiveStyle(key){
+  return Object.assign({}, DEFAULT_ELEMENT_COLORS[key] || {}, styleState[key] || {});
+}
+ 
 function getInlineStyleFor(key){
-  const props = styleState[key] || {};
+  const props = getEffectiveStyle(key);
   return Object.entries(props)
     .filter(([k, v]) => v)
     .map(([k, v]) => `${CSS_PROP_MAP[k]}:${v}`)
@@ -1234,8 +1246,7 @@ document.getElementById('style-reset-btn').addEventListener('click', () => {
 function buildStyleRules(){
   const blocks = [];
   GROUPS.flatMap(g => g.keys).forEach(key => {
-    const props = styleState[key];
-    if(!props) return;
+    const props = getEffectiveStyle(key);
     const entries = Object.entries(props).filter(([k, v]) => v);
     if(entries.length === 0) return;
     const def = ELEMENT_DEFS[key];
