@@ -382,6 +382,39 @@
   }
   .style-reset-btn:hover{border-color:var(--cta);color:var(--cta);}
  
+  /* ---------- js screen ---------- */
+  .js-layout{display:grid;grid-template-columns:360px 1fr;flex:1;min-height:0;}
+  .field-select{
+    width:100%;background:var(--surface-alt);border:1px solid var(--line);border-radius:6px;
+    padding:9px 10px;color:var(--ink);font-family:'Inter',sans-serif;font-size:13px;margin-bottom:12px;
+  }
+  .field-select:focus{outline:none;border-color:var(--cta);}
+  .field-select:disabled{opacity:.5;cursor:not-allowed;}
+  .field-label{display:block;font-size:12px;color:var(--muted);margin:0 0 6px;}
+  .field-text{
+    width:100%;background:var(--surface-alt);border:1px solid var(--line);border-radius:6px;
+    padding:9px 10px;color:var(--string);font-family:'JetBrains Mono',monospace;font-size:13px;margin-bottom:12px;
+  }
+  .field-text:focus{outline:none;border-color:var(--string);}
+  .field-checkbox-row{display:flex;align-items:center;gap:8px;margin-bottom:14px;font-size:12px;color:var(--muted);}
+  .field-checkbox-row input{accent-color:var(--cta);}
+  .behavior-row{
+    display:flex;align-items:center;justify-content:space-between;gap:8px;
+    background:var(--surface-alt);border:1px solid var(--line);border-radius:6px;
+    padding:8px 10px;margin-bottom:8px;font-size:12px;
+  }
+  .behavior-desc{color:var(--ink);}
+  .js-empty-hint{font-size:12px;color:var(--muted);opacity:.75;}
+  .js-preview-card{
+    max-width:520px;border:1px solid var(--line);border-radius:12px;padding:20px;min-height:60px;
+  }
+  .js-preview-empty{color:var(--muted);font-size:13px;text-align:center;padding:30px 12px;}
+  .js-preview-status{
+    margin-top:16px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--string);
+    min-height:18px;
+  }
+  .tk-str{color:var(--string);}
+ 
   .preview-panel{display:flex;flex-direction:column;min-height:0;}
   .preview-area{flex:1;overflow-y:auto;padding:28px;}
   .preview-label{
@@ -409,6 +442,7 @@
     .builder{grid-template-columns:1fr;}
     .palette{border-right:none;border-bottom:1px solid var(--line);}
     .css-layout{grid-template-columns:1fr;}
+    .js-layout{grid-template-columns:1fr;}
     .color-panel{border-right:none;border-bottom:1px solid var(--line);}
     h1.title{font-size:32px;}
   }
@@ -438,7 +472,7 @@
       <span class="arrow">→</span>
       <span class="step clickable" data-goto="css">&lt;css&gt;</span>
       <span class="arrow">→</span>
-      <span class="step">&lt;js&gt;</span>
+      <span class="step clickable" data-goto="js">&lt;js&gt;</span>
       <span class="arrow">→</span>
       <span class="step">&lt;preview /&gt;</span>
     </div>
@@ -455,7 +489,7 @@
       <span class="arrow">→</span>
       <span class="step clickable" data-goto="css">&lt;css&gt;</span>
       <span class="arrow">→</span>
-      <span class="step">&lt;js&gt;</span>
+      <span class="step clickable" data-goto="js">&lt;js&gt;</span>
       <span class="arrow">→</span>
       <span class="step">&lt;preview /&gt;</span>
     </div>
@@ -506,7 +540,7 @@
       <span class="arrow">→</span>
       <span class="step current">&lt;css&gt;</span>
       <span class="arrow">→</span>
-      <span class="step">&lt;js&gt;</span>
+      <span class="step clickable" data-goto="js">&lt;js&gt;</span>
       <span class="arrow">→</span>
       <span class="step">&lt;preview /&gt;</span>
     </div>
@@ -563,6 +597,86 @@
   </div>
 </div>
  
+<!-- ============ JS SCREEN ============ -->
+<div id="screen-js" class="screen">
+  <div class="topbar">
+    <div class="roadmap">
+      <span class="step clickable" data-goto="start">&lt;start&gt;</span>
+      <span class="arrow">→</span>
+      <span class="step clickable" data-goto="html">&lt;html&gt;</span>
+      <span class="arrow">→</span>
+      <span class="step clickable" data-goto="css">&lt;css&gt;</span>
+      <span class="arrow">→</span>
+      <span class="step current">&lt;js&gt;</span>
+      <span class="arrow">→</span>
+      <span class="step">&lt;preview /&gt;</span>
+    </div>
+    <div class="legend">
+      <span>pick an element on your page, then choose what happens when it's clicked</span>
+    </div>
+  </div>
+ 
+  <div class="js-layout">
+    <div class="color-panel">
+      <div class="panel-section">
+        <p class="panel-eyebrow">Your page elements</p>
+        <p class="panel-hint">Pick something you built in the HTML screen.</p>
+        <select id="js-element-select" class="field-select"></select>
+ 
+        <div id="js-behavior-section" style="display:none;">
+          <label class="field-label">When it's clicked…</label>
+          <select id="js-behavior-select" class="field-select">
+            <option value="">Choose what happens…</option>
+            <option value="toggle">Show/hide another element</option>
+            <option value="link">Go to a link</option>
+          </select>
+ 
+          <div id="js-toggle-fields" style="display:none;">
+            <label class="field-label">Which element should it show or hide?</label>
+            <select id="js-target-select" class="field-select"></select>
+            <div class="field-checkbox-row">
+              <input type="checkbox" id="js-start-hidden">
+              <label for="js-start-hidden">Start hidden until clicked</label>
+            </div>
+          </div>
+ 
+          <div id="js-link-fields" style="display:none;">
+            <label class="field-label">Where should it go?</label>
+            <input type="text" id="js-url-input" class="field-text" placeholder="https://example.com">
+          </div>
+ 
+          <button class="style-reset-btn" id="js-remove-behavior-btn">Remove this behavior</button>
+        </div>
+      </div>
+ 
+      <div class="panel-section">
+        <p class="panel-eyebrow">Active behaviors</p>
+        <div id="active-behaviors"></div>
+      </div>
+    </div>
+ 
+    <div class="preview-panel">
+      <div class="preview-area">
+        <p class="preview-label">try your page</p>
+        <div class="js-preview-card" id="js-preview-root"></div>
+        <p class="js-preview-status" id="js-preview-status"></p>
+      </div>
+      <div class="code-ribbon">
+        <button class="code-toggle" id="js-code-toggle">
+          <span>view generated code</span>
+          <span class="chev">⌄</span>
+        </button>
+        <div class="code-wrap" id="js-code-wrap">
+          <div class="code-inner">
+            <pre id="js-code-output"></pre>
+            <button class="copy-btn" id="js-copy-btn">copy</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+ 
 <script>
 const ELEMENT_DEFS = {
   header:  {tag:'header',  label:'Header',   type:'structure'},
@@ -588,7 +702,7 @@ const GROUPS = [
   {name:'Content',   desc:'Common building blocks', keys:['card','button','a','img']}
 ];
  
-const state = { tree: [], selected: 'root', counter: 0 };
+const state = { tree: [], selected: 'root', counter: 0, interactions: {} };
 let draggedId = null;
  
 function escapeHtml(str){
@@ -716,30 +830,42 @@ function updateTargetLabel(){
   }
 }
  
-function nodeLines(node, depth){
+function getReferencedNodeIds(){
+  const ids = new Set();
+  Object.entries(state.interactions || {}).forEach(([triggerId, cfg]) => {
+    if(!cfg || !cfg.behavior) return;
+    ids.add(triggerId);
+    if(cfg.behavior === 'toggle' && cfg.targetId) ids.add(cfg.targetId);
+  });
+  return ids;
+}
+ 
+function nodeLines(node, depth, referencedIds){
   const def = ELEMENT_DEFS[node.key];
   const indent = '  '.repeat(depth);
+  const idAttr = referencedIds && referencedIds.has(node.id) ? ` id="${node.id}"` : '';
   if(def.type === 'text'){
     const content = (node.content && node.content.trim()) ? node.content : def.placeholder;
-    return [`${indent}<${def.tag}>${content}</${def.tag}>`];
+    return [`${indent}<${def.tag}${idAttr}>${content}</${def.tag}>`];
   }
   if(def.type === 'media'){
     const alt = (node.content && node.content.trim()) ? node.content : 'describe the image';
-    return [`${indent}<img src="your-image.jpg" alt="${alt}">`];
+    return [`${indent}<img${idAttr} src="your-image.jpg" alt="${alt}">`];
   }
-  const openTag = def.className ? `<${def.tag} class="${def.className}">` : `<${def.tag}>`;
+  const openTag = def.className ? `<${def.tag}${idAttr} class="${def.className}">` : `<${def.tag}${idAttr}>`;
   const childLines = node.children.length
-    ? node.children.flatMap(c => nodeLines(c, depth+1))
+    ? node.children.flatMap(c => nodeLines(c, depth+1, referencedIds))
     : [`${indent}  <!-- empty -->`];
   return [`${indent}${openTag}`, ...childLines, `${indent}</${def.tag}>`];
 }
  
 function buildCode(){
+  const referencedIds = getReferencedNodeIds();
   const lines = ['<!DOCTYPE html>', '<html>', '<head>', '  <title>My Page</title>', '</head>', '<body>'];
   if(state.tree.length === 0){
     lines.push('  <!-- add pieces on the left to see them here -->');
   } else {
-    state.tree.forEach(n => lines.push(...nodeLines(n, 1)));
+    state.tree.forEach(n => lines.push(...nodeLines(n, 1, referencedIds)));
   }
   lines.push('</body>', '</html>');
   return lines.join('\n');
@@ -1123,6 +1249,293 @@ renderStyleElementSelect();
 renderStyleControls(null);
 updateCssCode();
  
+/* ---- js screen: behaviors ---- */
+let currentTriggerId = null;
+ 
+function flattenTree(nodes, depth){
+  let out = [];
+  nodes.forEach(n => {
+    out.push({id: n.id, key: n.key, depth, node: n});
+    if(n.children && n.children.length) out = out.concat(flattenTree(n.children, depth + 1));
+  });
+  return out;
+}
+ 
+function optionLabel(item){
+  const def = ELEMENT_DEFS[item.key];
+  const indent = '\u2014 '.repeat(item.depth);
+  const preview = item.node.content ? ` "${escapeHtml(item.node.content.slice(0, 20))}"` : '';
+  return `${indent}&lt;${def.tag}&gt;${preview}`;
+}
+ 
+function collectDescendantIds(node, set){
+  (node.children || []).forEach(c => { set.add(c.id); collectDescendantIds(c, set); });
+}
+ 
+function renderJsElementSelect(){
+  const select = document.getElementById('js-element-select');
+  const flat = flattenTree(state.tree, 0);
+  if(flat.length === 0){
+    select.innerHTML = '<option value="">Build something in the HTML screen first</option>';
+    select.disabled = true;
+    document.getElementById('js-behavior-section').style.display = 'none';
+    currentTriggerId = null;
+    return;
+  }
+  select.disabled = false;
+  const stillExists = currentTriggerId && findById(state.tree, currentTriggerId);
+  if(!stillExists) currentTriggerId = null;
+  select.innerHTML = '<option value="">Choose an element from your page…</option>' +
+    flat.map(item => `<option value="${item.id}" ${item.id === currentTriggerId ? 'selected' : ''}>${optionLabel(item)}</option>`).join('');
+}
+ 
+function toggleBehaviorFields(behavior){
+  document.getElementById('js-toggle-fields').style.display = behavior === 'toggle' ? 'block' : 'none';
+  document.getElementById('js-link-fields').style.display = behavior === 'link' ? 'block' : 'none';
+  if(behavior === 'toggle') renderTargetSelect(currentTriggerId);
+}
+ 
+function renderTargetSelect(triggerId){
+  const excluded = new Set([triggerId]);
+  const node = findById(state.tree, triggerId);
+  if(node) collectDescendantIds(node, excluded);
+  const flat = flattenTree(state.tree, 0).filter(item => !excluded.has(item.id));
+  const current = (state.interactions[triggerId] || {}).targetId || '';
+  const select = document.getElementById('js-target-select');
+  select.innerHTML = '<option value="">Choose the element to show/hide…</option>' +
+    flat.map(item => `<option value="${item.id}" ${item.id === current ? 'selected' : ''}>${optionLabel(item)}</option>`).join('');
+}
+ 
+function renderBehaviorForm(){
+  const section = document.getElementById('js-behavior-section');
+  if(!currentTriggerId){ section.style.display = 'none'; return; }
+  section.style.display = 'block';
+  const cfg = state.interactions[currentTriggerId] || {};
+  document.getElementById('js-behavior-select').value = cfg.behavior || '';
+  toggleBehaviorFields(cfg.behavior || '');
+  if(cfg.behavior === 'toggle'){
+    document.getElementById('js-start-hidden').checked = !!cfg.startHidden;
+  } else if(cfg.behavior === 'link'){
+    document.getElementById('js-url-input').value = cfg.url || '';
+  }
+}
+ 
+function getElementLabelForList(id){
+  const node = findById(state.tree, id);
+  if(!node) return '(deleted element)';
+  const def = ELEMENT_DEFS[node.key];
+  const preview = node.content ? ` "${escapeHtml(node.content.slice(0, 18))}"` : '';
+  return `&lt;${def.tag}&gt;${preview}`;
+}
+ 
+function renderActiveBehaviorsList(){
+  const wrap = document.getElementById('active-behaviors');
+  const entries = Object.entries(state.interactions || {}).filter(([id, cfg]) => cfg && cfg.behavior);
+  if(entries.length === 0){
+    wrap.innerHTML = '<p class="js-empty-hint">No behaviors added yet.</p>';
+    return;
+  }
+  wrap.innerHTML = entries.map(([id, cfg]) => {
+    let desc;
+    if(cfg.behavior === 'toggle'){
+      desc = cfg.targetId ? `shows/hides ${getElementLabelForList(cfg.targetId)}` : 'shows/hides (no target chosen)';
+    } else {
+      desc = cfg.url ? `goes to ${escapeHtml(cfg.url)}` : 'goes to (no link set)';
+    }
+    return `<div class="behavior-row">
+      <span class="behavior-desc">${getElementLabelForList(id)} → ${desc}</span>
+      <button class="del-btn" data-remove-behavior="${id}" aria-label="remove">×</button>
+    </div>`;
+  }).join('');
+}
+ 
+function buildColorVarsStyle(){
+  return COLOR_ROLES.map(r => `--color-${r.key}:${colorState[r.key]}`).join(';');
+}
+ 
+function renderPreviewNode(node, referencedIds){
+  const def = ELEMENT_DEFS[node.key];
+  const idAttr = referencedIds.has(node.id) ? ` id="${node.id}"` : '';
+  const classAttr = def.className ? ` class="${def.className}"` : '';
+  let styleStr = getInlineStyleFor(node.key);
+  const hiddenCfg = Object.values(state.interactions || {}).find(cfg => cfg && cfg.behavior === 'toggle' && cfg.targetId === node.id && cfg.startHidden);
+  if(hiddenCfg) styleStr += (styleStr ? ';' : '') + 'display:none';
+ 
+  if(def.type === 'text'){
+    const content = (node.content && node.content.trim()) ? escapeHtml(node.content) : escapeHtml(def.placeholder);
+    const styleAttr = styleStr ? ` style="${styleStr}"` : '';
+    return `<${def.tag}${idAttr}${classAttr}${styleAttr}>${content}</${def.tag}>`;
+  }
+  if(def.type === 'media'){
+    const base = 'width:100%;max-width:220px;height:120px;background:var(--surface-alt);border:1px dashed var(--line);display:flex;align-items:center;justify-content:center;font-size:24px;';
+    return `<div${idAttr}${classAttr} style="${base}${styleStr}">🖼</div>`;
+  }
+  const styleAttr = styleStr ? ` style="${styleStr}"` : '';
+  const childrenHtml = node.children.length ? node.children.map(c => renderPreviewNode(c, referencedIds)).join('') : '';
+  return `<${def.tag}${idAttr}${classAttr}${styleAttr}>${childrenHtml}</${def.tag}>`;
+}
+ 
+function announcePreview(msg){
+  const status = document.getElementById('js-preview-status');
+  if(status) status.textContent = msg;
+}
+ 
+function renderJsPreview(){
+  const container = document.getElementById('js-preview-root');
+  document.getElementById('js-preview-status').textContent = '';
+  if(state.tree.length === 0){
+    container.removeAttribute('style');
+    container.innerHTML = '<p class="js-preview-empty">Nothing built yet — add some elements in the HTML screen first, then come back here.</p>';
+    return;
+  }
+  const referencedIds = getReferencedNodeIds();
+  container.setAttribute('style', buildColorVarsStyle());
+  container.innerHTML = state.tree.map(n => renderPreviewNode(n, referencedIds)).join('');
+ 
+  Object.entries(state.interactions || {}).forEach(([triggerId, cfg]) => {
+    if(!cfg || !cfg.behavior) return;
+    const triggerEl = document.getElementById(triggerId);
+    if(!triggerEl) return;
+    triggerEl.style.cursor = 'pointer';
+    if(cfg.behavior === 'toggle' && cfg.targetId){
+      triggerEl.addEventListener('click', () => {
+        const targetEl = document.getElementById(cfg.targetId);
+        if(!targetEl) return;
+        targetEl.style.display = targetEl.style.display === 'none' ? '' : 'none';
+        announcePreview(`Clicked ${getElementLabelForList(triggerId).replace(/&lt;|&gt;/g, m => m === '&lt;' ? '<' : '>')} → toggled ${getElementLabelForList(cfg.targetId).replace(/&lt;|&gt;/g, m => m === '&lt;' ? '<' : '>')}`);
+      });
+    } else if(cfg.behavior === 'link' && cfg.url){
+      triggerEl.addEventListener('click', e => {
+        e.preventDefault();
+        announcePreview(`Clicked ${getElementLabelForList(triggerId).replace(/&lt;|&gt;/g, m => m === '&lt;' ? '<' : '>')} → would go to ${cfg.url}`);
+      });
+    }
+  });
+}
+ 
+function buildJsCode(){
+  const entries = Object.entries(state.interactions || {}).filter(([id, cfg]) =>
+    cfg && cfg.behavior && (cfg.behavior === 'link' ? cfg.url : cfg.targetId)
+  );
+  if(entries.length === 0) return '// add a behavior on the left to see the code here';
+  const blocks = entries.map(([id, cfg]) => {
+    if(cfg.behavior === 'toggle'){
+      const initLines = cfg.startHidden ? [`document.getElementById('${cfg.targetId}').style.display = 'none';`, ''] : [];
+      return [...initLines,
+        `document.getElementById('${id}').addEventListener('click', function () {`,
+        `  const target = document.getElementById('${cfg.targetId}');`,
+        `  target.style.display = target.style.display === 'none' ? '' : 'none';`,
+        `});`
+      ].join('\n');
+    }
+    return [
+      `document.getElementById('${id}').addEventListener('click', function (e) {`,
+      `  e.preventDefault();`,
+      `  window.location.href = '${cfg.url}';`,
+      `});`
+    ].join('\n');
+  });
+  return blocks.join('\n\n');
+}
+ 
+function highlightJs(escapedText){
+  let out = escapedText.replace(/(&#39;[^&\n]*?&#39;)/g, '<span class="tk-str">$1</span>');
+  ['function', 'const', 'if', 'else'].forEach(kw => {
+    out = out.replace(new RegExp(`\\b${kw}\\b`, 'g'), `<span class="tk-tag">${kw}</span>`);
+  });
+  ['document.getElementById', 'addEventListener', 'window.location.href'].forEach(kw => {
+    out = out.replace(new RegExp(kw.replace(/\./g, '\\.'), 'g'), `<span class="tk-tag">${kw}</span>`);
+  });
+  return out;
+}
+ 
+function updateJsCode(){
+  const plain = buildJsCode();
+  state.plainJsCode = plain;
+  document.getElementById('js-code-output').innerHTML = highlightJs(escapeHtml(plain));
+}
+ 
+function updateJsScreen(){
+  renderActiveBehaviorsList();
+  renderJsPreview();
+  updateJsCode();
+  updateCode();
+}
+ 
+document.getElementById('js-element-select').addEventListener('change', e => {
+  currentTriggerId = e.target.value || null;
+  renderBehaviorForm();
+});
+ 
+document.getElementById('js-behavior-select').addEventListener('change', e => {
+  if(!currentTriggerId) return;
+  const behavior = e.target.value;
+  if(!behavior){
+    delete state.interactions[currentTriggerId];
+  } else {
+    state.interactions[currentTriggerId] = state.interactions[currentTriggerId] || {};
+    state.interactions[currentTriggerId].behavior = behavior;
+  }
+  toggleBehaviorFields(behavior);
+  updateJsScreen();
+});
+ 
+document.getElementById('js-target-select').addEventListener('change', e => {
+  if(!currentTriggerId) return;
+  state.interactions[currentTriggerId] = state.interactions[currentTriggerId] || {behavior: 'toggle'};
+  state.interactions[currentTriggerId].targetId = e.target.value || null;
+  updateJsScreen();
+});
+ 
+document.getElementById('js-start-hidden').addEventListener('change', e => {
+  if(!currentTriggerId) return;
+  state.interactions[currentTriggerId] = state.interactions[currentTriggerId] || {behavior: 'toggle'};
+  state.interactions[currentTriggerId].startHidden = e.target.checked;
+  updateJsScreen();
+});
+ 
+document.getElementById('js-url-input').addEventListener('input', e => {
+  if(!currentTriggerId) return;
+  state.interactions[currentTriggerId] = state.interactions[currentTriggerId] || {behavior: 'link'};
+  state.interactions[currentTriggerId].url = e.target.value;
+  updateJsScreen();
+});
+ 
+document.getElementById('js-remove-behavior-btn').addEventListener('click', () => {
+  if(!currentTriggerId) return;
+  delete state.interactions[currentTriggerId];
+  renderBehaviorForm();
+  updateJsScreen();
+});
+ 
+document.getElementById('active-behaviors').addEventListener('click', e => {
+  const btn = e.target.closest('[data-remove-behavior]');
+  if(!btn) return;
+  delete state.interactions[btn.dataset.removeBehavior];
+  if(currentTriggerId === btn.dataset.removeBehavior) renderBehaviorForm();
+  updateJsScreen();
+});
+ 
+const jsCodeToggle = document.getElementById('js-code-toggle');
+const jsCodeWrap = document.getElementById('js-code-wrap');
+jsCodeToggle.addEventListener('click', () => {
+  jsCodeToggle.classList.toggle('open');
+  jsCodeWrap.classList.toggle('open');
+});
+ 
+document.getElementById('js-copy-btn').addEventListener('click', () => {
+  navigator.clipboard.writeText(state.plainJsCode || '').then(() => {
+    const btn = document.getElementById('js-copy-btn');
+    const old = btn.textContent;
+    btn.textContent = 'copied!';
+    setTimeout(() => btn.textContent = old, 1200);
+  });
+});
+ 
+renderJsElementSelect();
+renderBehaviorForm();
+updateJsScreen();
+ 
 /* ---- wiring ---- */
 document.getElementById('start-btn').addEventListener('click', () => goto('html'));
 document.querySelectorAll('[data-goto]').forEach(el => {
@@ -1131,6 +1544,11 @@ document.querySelectorAll('[data-goto]').forEach(el => {
 function goto(name){
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById('screen-' + name).classList.add('active');
+  if(name === 'js'){
+    renderJsElementSelect();
+    renderBehaviorForm();
+    updateJsScreen();
+  }
 }
  
 document.getElementById('palette-groups').addEventListener('click', e => {
