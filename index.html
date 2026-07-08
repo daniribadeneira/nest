@@ -1093,10 +1093,26 @@ const RADIUS_OPTIONS = [
 ];
 const PADDING_OPTIONS = [
   {value:'', label:'Default'},
-  {value:'8px 12px', label:'Small'},
-  {value:'14px 22px', label:'Medium'},
-  {value:'20px 32px', label:'Large'}
+  {value:'4px', label:'4px'},
+  {value:'8px', label:'8px'},
+  {value:'12px', label:'12px'},
+  {value:'16px', label:'16px'},
+  {value:'24px', label:'24px'},
+  {value:'32px', label:'32px'},
+  {value:'48px', label:'48px'}
 ];
+  
+const MARGIN_OPTIONS = [
+  {value:'', label:'None'},
+  {value:'4px', label:'4px'},
+  {value:'8px', label:'8px'},
+  {value:'12px', label:'12px'},
+  {value:'16px', label:'16px'},
+  {value:'24px', label:'24px'},
+  {value:'32px', label:'32px'},
+  {value:'48px', label:'48px'}
+];
+
 const LAYOUT_OPTIONS = [
   {value:'', label:'Default (stacked)'},
   {value:'row', label:'Side by side'},
@@ -1104,10 +1120,16 @@ const LAYOUT_OPTIONS = [
 ];
  
 const CSS_PROP_MAP = {
-  fontFamily:'font-family', fontSize:'font-size', fontWeight:'font-weight',
-  textAlign:'text-align', textDecoration:'text-decoration',
-  padding:'padding', borderRadius:'border-radius',
-  textColor:'color', background:'background'
+ fontFamily:'font-family',
+  fontSize:'font-size',
+  fontWeight:'font-weight',
+  textAlign:'text-align',
+  textDecoration:'text-decoration',
+  padding:'padding',
+  margin:'margin',          // <-- add this
+  borderRadius:'border-radius',
+  textColor:'color',
+  background:'background'
 };
  
 const LAYOUT_DECLARATIONS = {
@@ -1134,6 +1156,12 @@ function textSchema(withDecoration){
     {key:'fontWeight', label:'Weight', options:FONT_WEIGHT_OPTIONS},
     {key:'textAlign', label:'Alignment', options:TEXT_ALIGN_OPTIONS},
     {key:'textColor', label:'Color', options:buildColorRoleOptions()}
+    {key:'padding', label:'Padding', options:PADDING_OPTIONS},
+{
+    key:'margin',
+    label:'Margin',
+    options:MARGIN_OPTIONS
+}
   ];
   if(withDecoration) props.push({key:'textDecoration', label:'Underline', options:DECORATION_OPTIONS});
   return props;
