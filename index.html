@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Nest — build a page, see the code</title>
+<title>Nest</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -1696,7 +1696,23 @@ function indentBlock(text, spaces){
  
 function buildFullCodePlain(){
   const {cssText, jsText, hasJs, bodyLines} = buildFullCodeParts();
-  const lines = ['<!DOCTYPE html>', '<html>', '<head>', '  <title>My Page</title>', '  <style>'];
+  const lines = [
+  '<!DOCTYPE html>',
+  '<html>',
+  '<head>',
+  '  <title>My Page</title>',
+  '  <style>',
+  '    html, body {',
+  '      margin: 0;',
+  '      padding: 0;',
+  '      width: 100%;',
+  '      min-height: 100%;',
+  '    }',
+  '',
+  '    h1, h2, h3, p {',
+  '      margin-top: 0;',
+  '    }'
+];
   lines.push(indentBlock(cssText, 4));
   lines.push('  </style>', '</head>', '<body>', ...bodyLines);
   if(hasJs){
