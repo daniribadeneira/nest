@@ -345,6 +345,43 @@
   .eyedrop-btn[disabled]{opacity:.3;cursor:not-allowed;}
   .eyedrop-note{font-size:11px;color:var(--muted);opacity:.75;line-height:1.5;margin-top:4px;}
  
+  .panel-section{margin-bottom:26px;padding-bottom:22px;border-bottom:1px solid var(--line);}
+  .panel-section:last-child{margin-bottom:0;padding-bottom:0;border-bottom:none;}
+  .panel-eyebrow{
+    font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.08em;
+    text-transform:uppercase;color:var(--muted);margin:0 0 4px;
+  }
+  .panel-hint{font-size:12px;color:var(--muted);opacity:.85;line-height:1.5;margin:0 0 14px;}
+ 
+  #style-element-select{
+    width:100%;background:var(--surface-alt);border:1px solid var(--line);border-radius:6px;
+    padding:9px 10px;color:var(--ink);font-family:'Inter',sans-serif;font-size:13px;margin-bottom:14px;
+  }
+  #style-element-select:focus{outline:none;border-color:var(--cta);}
+  .style-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;}
+  .style-label{font-size:12px;color:var(--muted);flex:none;width:82px;}
+  .style-select{
+    flex:1;min-width:0;background:var(--surface-alt);border:1px solid var(--line);border-radius:6px;
+    padding:7px 8px;color:var(--ink);font-family:'Inter',sans-serif;font-size:12.5px;
+  }
+  .style-select:focus{outline:none;border-color:var(--cta);}
+  .style-empty{font-size:12px;color:var(--muted);opacity:.75;}
+  .style-sample-label{
+    font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);
+    margin:14px 0 8px;text-transform:uppercase;letter-spacing:.06em;
+  }
+  .style-sample-box{
+    background:var(--surface);border:1px solid var(--line);border-radius:8px;
+    padding:16px;display:flex;align-items:center;justify-content:center;min-height:60px;
+    text-align:center;
+  }
+  .style-reset-btn{
+    margin-top:14px;width:100%;
+    background:transparent;border:1px solid var(--line);color:var(--muted);
+    border-radius:6px;padding:8px 12px;font-size:12px;cursor:pointer;
+  }
+  .style-reset-btn:hover{border-color:var(--cta);color:var(--cta);}
+ 
   .preview-panel{display:flex;flex-direction:column;min-height:0;}
   .preview-area{flex:1;overflow-y:auto;padding:28px;}
   .preview-label{
@@ -474,12 +511,26 @@
       <span class="step">&lt;preview /&gt;</span>
     </div>
     <div class="legend">
-      <span>pick up to 5 colors — wheel, eyedropper, or hex code</span>
+      <span>colors, fonts, sizes, and spacing — all built visually</span>
     </div>
   </div>
  
   <div class="css-layout">
-    <div class="color-panel" id="color-panel"></div>
+    <div class="color-panel">
+      <div class="panel-section">
+        <p class="panel-eyebrow">Colors</p>
+        <p class="panel-hint">Pick up to 5 colors — wheel, eyedropper, or hex code.</p>
+        <div id="color-cards"></div>
+      </div>
+      <div class="panel-section">
+        <p class="panel-eyebrow">Element styles</p>
+        <p class="panel-hint">Choose a piece, then set its font, size, and spacing.</p>
+        <select id="style-element-select"></select>
+        <div id="style-controls"></div>
+        <div id="style-sample-wrap"></div>
+        <button class="style-reset-btn" id="style-reset-btn">Reset this element</button>
+      </div>
+    </div>
  
     <div class="preview-panel">
       <div class="preview-area">
@@ -745,7 +796,7 @@ COLOR_ROLES.forEach(r => colorState[r.key] = r.default);
 const supportsEyedrop = 'EyeDropper' in window;
  
 function renderColorPickers(){
-  const wrap = document.getElementById('color-panel');
+  const wrap = document.getElementById('color-cards');
   wrap.innerHTML = COLOR_ROLES.map(role => `
     <div class="color-card">
       <p class="color-role">${role.label}</p>
@@ -797,15 +848,209 @@ function updatePreview(){
   footer.style.color = colorState.neutral;
 }
  
+/* ---- css screen: element styles ---- */
+const FONT_FAMILY_OPTIONS = [
+  {value:'', label:'Default'},
+  {value:"'Inter', sans-serif", label:'Sans (Inter)'},
+  {value:"'Space Grotesk', sans-serif", label:'Display (Space Grotesk)'},
+  {value:"'JetBrains Mono', monospace", label:'Mono (JetBrains Mono)'},
+  {value:'Georgia, serif', label:'Serif (Georgia)'},
+  {value:"'Courier New', monospace", label:'Typewriter (Courier New)'}
+];
+const FONT_SIZE_OPTIONS = [{value:'', label:'Default'}].concat(
+  ['14px','16px','18px','20px','24px','32px','40px','56px'].map(v => ({value:v, label:v}))
+);
+const FONT_WEIGHT_OPTIONS = [
+  {value:'', label:'Default'},
+  {value:'400', label:'Regular (400)'},
+  {value:'500', label:'Medium (500)'},
+  {value:'600', label:'Semibold (600)'},
+  {value:'700', label:'Bold (700)'}
+];
+const TEXT_ALIGN_OPTIONS = [
+  {value:'', label:'Default'},
+  {value:'left', label:'Left'},
+  {value:'center', label:'Center'},
+  {value:'right', label:'Right'}
+];
+const DECORATION_OPTIONS = [
+  {value:'', label:'Default'},
+  {value:'underline', label:'Underline'},
+  {value:'none', label:'None'}
+];
+const RADIUS_OPTIONS = [
+  {value:'', label:'Default'},
+  {value:'0px', label:'Square'},
+  {value:'6px', label:'Slightly round'},
+  {value:'12px', label:'Rounded'},
+  {value:'24px', label:'Very round'},
+  {value:'999px', label:'Pill'}
+];
+const PADDING_OPTIONS = [
+  {value:'', label:'Default'},
+  {value:'8px 12px', label:'Small'},
+  {value:'14px 22px', label:'Medium'},
+  {value:'20px 32px', label:'Large'}
+];
+ 
+const CSS_PROP_MAP = {
+  fontFamily:'font-family', fontSize:'font-size', fontWeight:'font-weight',
+  textAlign:'text-align', textDecoration:'text-decoration',
+  padding:'padding', borderRadius:'border-radius'
+};
+ 
+function textSchema(withDecoration){
+  const props = [
+    {key:'fontFamily', label:'Font', options:FONT_FAMILY_OPTIONS},
+    {key:'fontSize', label:'Size', options:FONT_SIZE_OPTIONS},
+    {key:'fontWeight', label:'Weight', options:FONT_WEIGHT_OPTIONS},
+    {key:'textAlign', label:'Alignment', options:TEXT_ALIGN_OPTIONS}
+  ];
+  if(withDecoration) props.push({key:'textDecoration', label:'Underline', options:DECORATION_OPTIONS});
+  return props;
+}
+function boxSchema(){
+  return [
+    {key:'padding', label:'Padding', options:PADDING_OPTIONS},
+    {key:'borderRadius', label:'Corners', options:RADIUS_OPTIONS}
+  ];
+}
+ 
+const STYLE_SCHEMA = {
+  header: boxSchema(), nav: boxSchema(), main: boxSchema(),
+  section: boxSchema(), footer: boxSchema(), div: boxSchema(),
+  h1: textSchema(), h2: textSchema(), h3: textSchema(),
+  p: textSchema(), span: textSchema(),
+  a: textSchema(true),
+  button: textSchema().concat(boxSchema()),
+  card: boxSchema(),
+  img: [{key:'borderRadius', label:'Corners', options:RADIUS_OPTIONS}]
+};
+ 
+const SAMPLE_TEXT = {
+  header:'Header area', nav:'Nav area', main:'Main area', section:'Section area',
+  footer:'Footer area', div:'Div area', card:'Card content',
+  h1:'Heading 1 sample', h2:'Heading 2 sample', h3:'Heading 3 sample',
+  p:'This is a sample paragraph so you can see how it looks.',
+  span:'Short label', a:'Sample link', button:'Sample button'
+};
+const BASE_SAMPLE_STYLE = {
+  button:'background:var(--cta);color:var(--cta-ink);border:none;cursor:default;',
+  a:'color:var(--string);text-decoration:underline;cursor:default;'
+};
+ 
+const styleState = {};
+let currentStyleKey = null;
+ 
+function renderStyleElementSelect(){
+  const select = document.getElementById('style-element-select');
+  select.innerHTML = '<option value="">Choose an element…</option>' + GROUPS.map(group => `
+    <optgroup label="${group.name}">
+      ${group.keys.map(key => `<option value="${key}">${ELEMENT_DEFS[key].label} (&lt;${ELEMENT_DEFS[key].tag}&gt;)</option>`).join('')}
+    </optgroup>
+  `).join('');
+}
+ 
+function getInlineStyleFor(key){
+  const props = styleState[key] || {};
+  return Object.entries(props)
+    .filter(([k, v]) => v)
+    .map(([k, v]) => `${CSS_PROP_MAP[k]}:${v}`)
+    .join(';');
+}
+ 
+function renderSample(key){
+  const wrap = document.getElementById('style-sample-wrap');
+  if(!key){ wrap.innerHTML = ''; return; }
+  const def = ELEMENT_DEFS[key];
+  const custom = getInlineStyleFor(key);
+  const base = BASE_SAMPLE_STYLE[key] || '';
+  const combined = base + custom;
+  let sampleHtml;
+  if(def.type === 'media'){
+    sampleHtml = `<div style="width:100px;height:70px;background:var(--surface-alt);border:1px dashed var(--line);display:flex;align-items:center;justify-content:center;font-size:20px;${combined}">🖼</div>`;
+  } else if(def.type === 'text'){
+    sampleHtml = `<${def.tag} style="margin:0;color:var(--ink);${combined}">${SAMPLE_TEXT[key]}</${def.tag}>`;
+  } else {
+    sampleHtml = `<div style="background:var(--surface-alt);border:1px dashed var(--line);color:var(--muted);font-size:12px;padding:10px;${combined}">${SAMPLE_TEXT[key] || 'content here'}</div>`;
+  }
+  wrap.innerHTML = `<p class="style-sample-label">preview</p><div class="style-sample-box">${sampleHtml}</div>`;
+}
+ 
+function renderStyleControls(key){
+  const wrap = document.getElementById('style-controls');
+  const resetBtn = document.getElementById('style-reset-btn');
+  if(!key){
+    wrap.innerHTML = '<p class="style-empty">Choose an element above to style it.</p>';
+    resetBtn.style.display = 'none';
+    renderSample(null);
+    return;
+  }
+  resetBtn.style.display = 'block';
+  const schema = STYLE_SCHEMA[key] || [];
+  const current = styleState[key] || {};
+  wrap.innerHTML = schema.map(prop => `
+    <div class="style-row">
+      <label class="style-label">${prop.label}</label>
+      <select class="style-select" data-key="${key}" data-prop="${prop.key}">
+        ${prop.options.map(o => `<option value="${o.value}" ${(current[prop.key] || '') === o.value ? 'selected' : ''}>${o.label}</option>`).join('')}
+      </select>
+    </div>
+  `).join('');
+  renderSample(key);
+}
+ 
+document.getElementById('style-element-select').addEventListener('change', e => {
+  currentStyleKey = e.target.value || null;
+  renderStyleControls(currentStyleKey);
+});
+ 
+document.getElementById('style-controls').addEventListener('change', e => {
+  if(!e.target.matches('select.style-select')) return;
+  const key = e.target.dataset.key;
+  const prop = e.target.dataset.prop;
+  const val = e.target.value;
+  if(!styleState[key]) styleState[key] = {};
+  if(val) styleState[key][prop] = val; else delete styleState[key][prop];
+  renderSample(key);
+  updateCssCode();
+});
+ 
+document.getElementById('style-reset-btn').addEventListener('click', () => {
+  if(!currentStyleKey) return;
+  styleState[currentStyleKey] = {};
+  renderStyleControls(currentStyleKey);
+  updateCssCode();
+});
+ 
+function buildStyleRules(){
+  const blocks = [];
+  GROUPS.flatMap(g => g.keys).forEach(key => {
+    const props = styleState[key];
+    if(!props) return;
+    const entries = Object.entries(props).filter(([k, v]) => v);
+    if(entries.length === 0) return;
+    const def = ELEMENT_DEFS[key];
+    const selector = def.className ? `.${def.className}` : def.tag;
+    const lines = [`${selector} {`];
+    entries.forEach(([k, v]) => lines.push(`  ${CSS_PROP_MAP[k]}: ${v};`));
+    lines.push('}');
+    blocks.push(lines.join('\n'));
+  });
+  return blocks;
+}
+ 
 function buildCssCode(){
-  const lines = [':root {'];
-  COLOR_ROLES.forEach(r => lines.push(`  --color-${r.key}: ${colorState[r.key]};`));
-  lines.push('}');
-  return lines.join('\n');
+  const rootLines = [':root {'];
+  COLOR_ROLES.forEach(r => rootLines.push(`  --color-${r.key}: ${colorState[r.key]};`));
+  rootLines.push('}');
+  return [rootLines.join('\n'), ...buildStyleRules()].join('\n\n');
 }
  
 function highlightCss(escapedText){
-  return escapedText.replace(/(--[\w-]+)/g, '<span class="tk-tag">$1</span>');
+  let out = escapedText.replace(/(--[\w-]+)/g, '<span class="tk-tag">$1</span>');
+  out = out.replace(/^([.\w-]+)(?=\s\{)/gm, '<span class="tk-tag">$1</span>');
+  return out;
 }
  
 function updateCssCode(){
@@ -814,7 +1059,7 @@ function updateCssCode(){
   document.getElementById('css-code-output').innerHTML = highlightCss(escapeHtml(plain));
 }
  
-document.getElementById('color-panel').addEventListener('input', e => {
+document.getElementById('color-cards').addEventListener('input', e => {
   const role = e.target.dataset.role;
   if(!role) return;
   if(e.target.matches('input[type="color"]')){
@@ -826,13 +1071,13 @@ document.getElementById('color-panel').addEventListener('input', e => {
   }
 });
  
-document.getElementById('color-panel').addEventListener('change', e => {
+document.getElementById('color-cards').addEventListener('change', e => {
   if(e.target.classList.contains('hex-input')){
     e.target.value = colorState[e.target.dataset.role];
   }
 });
  
-document.getElementById('color-panel').addEventListener('click', async e => {
+document.getElementById('color-cards').addEventListener('click', async e => {
   const btn = e.target.closest('.eyedrop-btn');
   if(!btn || btn.disabled) return;
   try{
@@ -862,6 +1107,8 @@ document.getElementById('css-copy-btn').addEventListener('click', () => {
  
 renderColorPickers();
 updatePreview();
+renderStyleElementSelect();
+renderStyleControls(null);
 updateCssCode();
  
 /* ---- wiring ---- */
