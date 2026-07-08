@@ -729,7 +729,6 @@
     <p class="js-preview-status" id="final-preview-status"></p>
  
     <div class="preview-actions">
-      <button class="start-cta" id="final-download-btn">Download your page</button>
       <button class="reset-btn" id="final-restart-btn" style="margin-left:0;">Build another page</button>
     </div>
  
@@ -1750,17 +1749,6 @@ document.getElementById('full-copy-btn').addEventListener('click', () => {
   });
 });
  
-document.getElementById('final-download-btn').addEventListener('click', () => {
-  const blob = new Blob([state.plainFullCode || buildFullCodePlain()], {type: 'text/html'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'my-page.html';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-});
  
 document.getElementById('final-restart-btn').addEventListener('click', () => {
   if(!confirm('This clears everything you\'ve built — HTML, colors, styles, and behaviors. Start a brand new page?')) return;
