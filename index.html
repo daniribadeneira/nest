@@ -1502,7 +1502,11 @@ function renderJsPreview(){
     return;
   }
   const referencedIds = getReferencedNodeIds();
-  container.setAttribute('style', buildColorVarsStyle());
+  container.setAttribute(
+    'style',
+    buildColorVarsStyle() +
+    'margin:0;padding:0;overflow:hidden;'
+);
   container.innerHTML = state.tree.map(n => renderPreviewNode(n, referencedIds)).join('');
  
   Object.entries(state.interactions || {}).forEach(([triggerId, cfg]) => {
