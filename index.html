@@ -433,7 +433,16 @@
     background:var(--surface);border:1px solid var(--line);border-radius:4px;
     padding:3px 12px;flex:1;
   }
-  .browser-body{padding:40px;flex:1;overflow-y:auto;}
+  .browser-body{
+    flex:1;
+    overflow:auto;
+    padding:0;
+    background:white;
+}
+  #final-preview-root{
+    min-height:100%;
+    background:white;
+}
   .preview-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:16px 0;flex:none;}
   .bordered-ribbon{border:1px solid var(--line);border-radius:10px;flex:none;}
  
