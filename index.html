@@ -295,9 +295,84 @@
   }
   .copy-btn:hover{border-color:var(--string);color:var(--string);}
  
+  /* ---------- css screen ---------- */
+  .css-layout{
+    display:grid;
+    grid-template-columns:360px 1fr;
+    flex:1;
+    min-height:0;
+  }
+  .color-panel{
+    background:var(--surface);
+    border-right:1px solid var(--line);
+    padding:20px;
+    overflow-y:auto;
+  }
+  .color-card{
+    background:var(--surface-alt);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:14px;
+    margin-bottom:14px;
+  }
+  .color-role{
+    font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:600;
+    margin:0 0 2px;
+  }
+  .color-desc{font-size:12px;color:var(--muted);margin:0 0 12px;}
+  .color-row{display:flex;align-items:center;gap:8px;}
+  .swatch-wrap{
+    position:relative;width:38px;height:38px;border-radius:8px;
+    border:1px solid var(--line);overflow:hidden;flex:none;cursor:pointer;
+  }
+  .swatch-wrap input[type="color"]{
+    position:absolute;inset:-4px;width:calc(100% + 8px);height:calc(100% + 8px);
+    border:none;padding:0;cursor:pointer;background:none;
+  }
+  .hex-input{
+    flex:1;min-width:0;
+    background:var(--surface);border:1px solid var(--line);border-radius:6px;
+    padding:8px 10px;color:var(--ink);
+    font-family:'JetBrains Mono',monospace;font-size:13px;text-transform:uppercase;
+  }
+  .hex-input:focus{outline:none;border-color:var(--cta);}
+  .eyedrop-btn{
+    background:var(--surface);border:1px solid var(--line);border-radius:6px;
+    width:36px;height:36px;flex:none;cursor:pointer;color:var(--muted);
+    display:flex;align-items:center;justify-content:center;font-size:16px;
+  }
+  .eyedrop-btn:hover{border-color:var(--string);color:var(--string);}
+  .eyedrop-btn[disabled]{opacity:.3;cursor:not-allowed;}
+  .eyedrop-note{font-size:11px;color:var(--muted);opacity:.75;line-height:1.5;margin-top:4px;}
+ 
+  .preview-panel{display:flex;flex-direction:column;min-height:0;}
+  .preview-area{flex:1;overflow-y:auto;padding:28px;}
+  .preview-label{
+    font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.08em;
+    text-transform:uppercase;color:var(--muted);margin:0 0 14px;
+  }
+  .mini-site{
+    max-width:480px;border-radius:12px;overflow:hidden;
+    border:1px solid var(--line);
+  }
+  .mini-header{padding:18px 22px;transition:background .15s,color .15s;}
+  .mini-header h3{margin:0;font-family:'Space Grotesk',sans-serif;font-size:19px;font-weight:600;}
+  .mini-header nav{margin-top:10px;font-size:12px;}
+  .mini-header nav span{margin-right:14px;opacity:.85;}
+  .mini-body{padding:22px;transition:background .15s,color .15s;}
+  .mini-body p{margin:0 0 16px;font-size:13px;line-height:1.6;}
+  .mini-btn{
+    border:none;border-radius:6px;padding:10px 18px;font-size:13px;
+    font-family:'Inter',sans-serif;font-weight:600;cursor:default;
+    transition:background .15s,color .15s;
+  }
+  .mini-footer{padding:12px 22px;font-size:11px;transition:background .15s,color .15s;}
+ 
   @media(max-width:780px){
     .builder{grid-template-columns:1fr;}
     .palette{border-right:none;border-bottom:1px solid var(--line);}
+    .css-layout{grid-template-columns:1fr;}
+    .color-panel{border-right:none;border-bottom:1px solid var(--line);}
     h1.title{font-size:32px;}
   }
 </style>
@@ -322,9 +397,9 @@
     <div class="roadmap" style="justify-content:center;">
       <span class="step current">&lt;start&gt;</span>
       <span class="arrow">→</span>
-      <span class="step">&lt;html&gt;</span>
+      <span class="step clickable" data-goto="html">&lt;html&gt;</span>
       <span class="arrow">→</span>
-      <span class="step">&lt;css&gt;</span>
+      <span class="step clickable" data-goto="css">&lt;css&gt;</span>
       <span class="arrow">→</span>
       <span class="step">&lt;js&gt;</span>
       <span class="arrow">→</span>
@@ -341,7 +416,7 @@
       <span class="arrow">→</span>
       <span class="step current">&lt;html&gt;</span>
       <span class="arrow">→</span>
-      <span class="step">&lt;css&gt;</span>
+      <span class="step clickable" data-goto="css">&lt;css&gt;</span>
       <span class="arrow">→</span>
       <span class="step">&lt;js&gt;</span>
       <span class="arrow">→</span>
@@ -377,6 +452,59 @@
           <div class="code-inner">
             <pre id="code-output"></pre>
             <button class="copy-btn" id="copy-btn">copy</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+ 
+<!-- ============ CSS SCREEN ============ -->
+<div id="screen-css" class="screen">
+  <div class="topbar">
+    <div class="roadmap">
+      <span class="step clickable" data-goto="start">&lt;start&gt;</span>
+      <span class="arrow">→</span>
+      <span class="step clickable" data-goto="html">&lt;html&gt;</span>
+      <span class="arrow">→</span>
+      <span class="step current">&lt;css&gt;</span>
+      <span class="arrow">→</span>
+      <span class="step">&lt;js&gt;</span>
+      <span class="arrow">→</span>
+      <span class="step">&lt;preview /&gt;</span>
+    </div>
+    <div class="legend">
+      <span>pick up to 5 colors — wheel, eyedropper, or hex code</span>
+    </div>
+  </div>
+ 
+  <div class="css-layout">
+    <div class="color-panel" id="color-panel"></div>
+ 
+    <div class="preview-panel">
+      <div class="preview-area">
+        <p class="preview-label">how your colors work together</p>
+        <div class="mini-site">
+          <div class="mini-header" id="mini-header">
+            <h3>Site name</h3>
+            <nav><span>Home</span><span>About</span><span>Contact</span></nav>
+          </div>
+          <div class="mini-body" id="mini-body">
+            <p id="mini-body-text">This is body text, styled with your neutral base color.</p>
+            <button class="mini-btn" id="mini-btn">Call to action</button>
+          </div>
+          <div class="mini-footer" id="mini-footer">© your site</div>
+        </div>
+      </div>
+      <div class="code-ribbon">
+        <button class="code-toggle" id="css-code-toggle">
+          <span>view generated code</span>
+          <span class="chev">⌄</span>
+        </button>
+        <div class="code-wrap" id="css-code-wrap">
+          <div class="code-inner">
+            <pre id="css-code-output"></pre>
+            <button class="copy-btn" id="css-copy-btn">copy</button>
           </div>
         </div>
       </div>
@@ -603,6 +731,138 @@ function renderPalette(){
     </div>
   `).join('');
 }
+ 
+/* ---- css screen: colors ---- */
+const COLOR_ROLES = [
+  {key:'main',    label:'Main',         desc:'Primary brand color — headers, key elements', default:'#5b6b8c'},
+  {key:'light',   label:'Light',        desc:'Backgrounds and light surfaces',              default:'#f4f2ea'},
+  {key:'accent',  label:'Accent',       desc:'Buttons, links, highlights',                  default:'#e07a5f'},
+  {key:'neutral', label:'Neutral base', desc:'Body text and borders',                        default:'#8d8d86'},
+  {key:'dark',    label:'Dark',         desc:'Dark text, footers, contrast',                 default:'#22223b'}
+];
+const colorState = {};
+COLOR_ROLES.forEach(r => colorState[r.key] = r.default);
+const supportsEyedrop = 'EyeDropper' in window;
+ 
+function renderColorPickers(){
+  const wrap = document.getElementById('color-panel');
+  wrap.innerHTML = COLOR_ROLES.map(role => `
+    <div class="color-card">
+      <p class="color-role">${role.label}</p>
+      <p class="color-desc">${role.desc}</p>
+      <div class="color-row">
+        <label class="swatch-wrap" style="background:${colorState[role.key]}">
+          <input type="color" data-role="${role.key}" value="${colorState[role.key]}">
+        </label>
+        <input type="text" class="hex-input" data-role="${role.key}" value="${colorState[role.key]}" maxlength="7">
+        <button class="eyedrop-btn" data-role="${role.key}" ${supportsEyedrop ? '' : 'disabled'} title="${supportsEyedrop ? 'pick a color from your screen' : 'not supported in this browser'}">💧</button>
+      </div>
+    </div>
+  `).join('') + (supportsEyedrop ? '' : '<p class="eyedrop-note">The eyedropper works in Chrome and Edge. In other browsers, use the color wheel or type a hex code.</p>');
+}
+ 
+function isValidHex(val){
+  return /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/.test(val);
+}
+ 
+function setColor(role, hex, syncHexInput){
+  colorState[role] = hex;
+  const wheel = document.querySelector(`input[type="color"][data-role="${role}"]`);
+  if(wheel){
+    wheel.value = hex;
+    wheel.closest('.swatch-wrap').style.background = hex;
+  }
+  if(syncHexInput !== false){
+    const hexInput = document.querySelector(`.hex-input[data-role="${role}"]`);
+    if(hexInput) hexInput.value = hex;
+  }
+  updatePreview();
+  updateCssCode();
+}
+ 
+function updatePreview(){
+  const header = document.getElementById('mini-header');
+  const body = document.getElementById('mini-body');
+  const bodyText = document.getElementById('mini-body-text');
+  const btn = document.getElementById('mini-btn');
+  const footer = document.getElementById('mini-footer');
+  header.style.background = colorState.main;
+  header.style.color = colorState.light;
+  body.style.background = colorState.light;
+  body.style.color = colorState.dark;
+  bodyText.style.color = colorState.neutral;
+  btn.style.background = colorState.accent;
+  btn.style.color = colorState.light;
+  footer.style.background = colorState.dark;
+  footer.style.color = colorState.neutral;
+}
+ 
+function buildCssCode(){
+  const lines = [':root {'];
+  COLOR_ROLES.forEach(r => lines.push(`  --color-${r.key}: ${colorState[r.key]};`));
+  lines.push('}');
+  return lines.join('\n');
+}
+ 
+function highlightCss(escapedText){
+  return escapedText.replace(/(--[\w-]+)/g, '<span class="tk-tag">$1</span>');
+}
+ 
+function updateCssCode(){
+  const plain = buildCssCode();
+  state.plainCssCode = plain;
+  document.getElementById('css-code-output').innerHTML = highlightCss(escapeHtml(plain));
+}
+ 
+document.getElementById('color-panel').addEventListener('input', e => {
+  const role = e.target.dataset.role;
+  if(!role) return;
+  if(e.target.matches('input[type="color"]')){
+    setColor(role, e.target.value);
+  } else if(e.target.classList.contains('hex-input')){
+    let val = e.target.value.trim();
+    if(val && !val.startsWith('#')) val = '#' + val;
+    if(isValidHex(val)) setColor(role, val, false);
+  }
+});
+ 
+document.getElementById('color-panel').addEventListener('change', e => {
+  if(e.target.classList.contains('hex-input')){
+    e.target.value = colorState[e.target.dataset.role];
+  }
+});
+ 
+document.getElementById('color-panel').addEventListener('click', async e => {
+  const btn = e.target.closest('.eyedrop-btn');
+  if(!btn || btn.disabled) return;
+  try{
+    const eyeDropper = new EyeDropper();
+    const result = await eyeDropper.open();
+    setColor(btn.dataset.role, result.sRGBHex);
+  }catch(err){
+    /* user cancelled the eyedropper — no action needed */
+  }
+});
+ 
+const cssCodeToggle = document.getElementById('css-code-toggle');
+const cssCodeWrap = document.getElementById('css-code-wrap');
+cssCodeToggle.addEventListener('click', () => {
+  cssCodeToggle.classList.toggle('open');
+  cssCodeWrap.classList.toggle('open');
+});
+ 
+document.getElementById('css-copy-btn').addEventListener('click', () => {
+  navigator.clipboard.writeText(state.plainCssCode || '').then(() => {
+    const btn = document.getElementById('css-copy-btn');
+    const old = btn.textContent;
+    btn.textContent = 'copied!';
+    setTimeout(() => btn.textContent = old, 1200);
+  });
+});
+ 
+renderColorPickers();
+updatePreview();
+updateCssCode();
  
 /* ---- wiring ---- */
 document.getElementById('start-btn').addEventListener('click', () => goto('html'));
