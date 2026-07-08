@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nest — build a page, see the code</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#171631;
+    --surface:#211f45;
+    --surface-alt:#2b2856;
+    --line:#3d3a70;
+    --ink:#f2f0ff;
+    --muted:#a29ecb;
+    --tag:#ffa361;
+    --tag-dim:#4a3a30;
+    --string:#7ee7c7;
+    --string-dim:#294a41;
+    --cta:#ff5d8f;
+    --cta-ink:#3a0817;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    min-height:100vh;
+  }
+  .screen{display:none;min-height:100vh;flex-direction:column;}
+  .screen.active{display:flex;}
+ 
+  /* ---------- shared: roadmap ---------- */
+  .roadmap{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    flex-wrap:wrap;
+    font-family:'JetBrains Mono',monospace;
+    font-size:13px;
+  }
+  .roadmap .step{
+    padding:6px 12px;
+    border-radius:6px;
+    border:1px solid var(--line);
+    color:var(--muted);
+    background:var(--surface);
+    cursor:default;
+    white-space:nowrap;
+  }
+  .roadmap .step.clickable{cursor:pointer;}
+  .roadmap .step.clickable:hover{border-color:var(--tag);color:var(--ink);}
+  .roadmap .step.current{
+    background:var(--tag-dim);
+    border-color:var(--tag);
+    color:var(--tag);
+    font-weight:600;
+  }
+  .roadmap .arrow{color:var(--line);}
+ 
+  /* ---------- start screen ---------- */
+  #screen-start{align-items:center;justify-content:center;padding:48px 24px;}
+  .start-wrap{max-width:720px;width:100%;}
+  .window{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:12px;
+    overflow:hidden;
+    margin-bottom:28px;
+  }
+  .window-bar{
+    display:flex;align-items:center;gap:8px;
+    padding:10px 14px;
+    background:var(--surface-alt);
+    border-bottom:1px solid var(--line);
+  }
+  .dot{width:10px;height:10px;border-radius:50%;background:var(--line);}
+  .window-bar .filename{
+    margin-left:8px;font-family:'JetBrains Mono',monospace;
+    font-size:12px;color:var(--muted);
+  }
+  .window-body{padding:40px 36px 36px;}
+  .eyebrow{
+    font-family:'JetBrains Mono',monospace;
+    font-size:13px;color:var(--string);
+    margin:0 0 10px;
+  }
+  h1.title{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:44px;
+    font-weight:700;
+    margin:0 0 16px;
+    line-height:1.1;
+  }
+  h1.title .cursor{
+    display:inline-block;width:3px;height:36px;
+    background:var(--cta);vertical-align:-6px;
+    animation:blink 1.1s step-end infinite;
+    margin-left:4px;
+  }
+  @keyframes blink{50%{opacity:0;}}
+  .subtitle{
+    font-size:16px;line-height:1.6;color:var(--muted);
+    max-width:520px;margin:0 0 28px;
+  }
+  .start-cta{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:16px;font-weight:600;
+    background:var(--cta);color:var(--cta-ink);
+    border:none;border-radius:8px;
+    padding:14px 26px;cursor:pointer;
+  }
+  .start-cta:hover{filter:brightness(1.08);}
+  .start-foot{
+    text-align:center;color:var(--muted);font-size:13px;
+  }
+ 
+  /* ---------- html screen ---------- */
+  #screen-html{padding:0;}
+  .topbar{
+    display:flex;align-items:center;justify-content:space-between;
+    gap:16px;flex-wrap:wrap;
+    padding:16px 24px;
+    border-bottom:1px solid var(--line);
+    background:var(--surface);
+  }
+  .legend{
+    display:flex;gap:16px;font-size:12px;color:var(--muted);
+    font-family:'JetBrains Mono',monospace;
+  }
+  .legend span{display:inline-flex;align-items:center;gap:6px;}
+  .swatch{width:9px;height:9px;border-radius:2px;display:inline-block;}
+  .swatch.tag{background:var(--tag);}
+  .swatch.text{background:var(--string);}
+ 
+  .builder{
+    display:grid;
+    grid-template-columns:300px 1fr;
+    gap:0;
+    flex:1;
+    min-height:0;
+  }
+  .palette{
+    background:var(--surface);
+    border-right:1px solid var(--line);
+    padding:20px;
+    overflow-y:auto;
+  }
+  .palette-hint{
+    font-size:13px;color:var(--muted);line-height:1.5;
+    margin:0 0 20px;
+    padding-bottom:16px;
+    border-bottom:1px solid var(--line);
+  }
+  .group{margin-bottom:22px;}
+  .group-name{
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--muted);margin:0 0 3px;
+  }
+  .group-desc{font-size:12px;color:var(--muted);opacity:.75;margin:0 0 10px;}
+  .pill-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .pill{
+    background:var(--surface-alt);
+    border:1px solid var(--line);
+    border-left:3px solid var(--tag);
+    border-radius:6px;
+    padding:9px 10px;
+    text-align:left;
+    cursor:pointer;
+    color:var(--ink);
+  }
+  .pill.type-text{border-left-color:var(--string);}
+  .pill.type-media{border-left-color:var(--string);}
+  .pill:hover{background:#342f66;}
+  .pill .pill-tag{
+    display:block;font-family:'JetBrains Mono',monospace;
+    font-size:13px;font-weight:600;color:var(--tag);
+  }
+  .pill.type-text .pill-tag,.pill.type-media .pill-tag{color:var(--string);}
+  .pill .pill-label{display:block;font-size:11px;color:var(--muted);margin-top:2px;}
+ 
+  .canvas-col{display:flex;flex-direction:column;min-height:0;}
+  .canvas-toolbar{
+    display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+    padding:14px 24px;
+    border-bottom:1px solid var(--line);
+  }
+  .root-chip{
+    font-family:'JetBrains Mono',monospace;font-size:13px;
+    background:var(--surface-alt);border:1px solid var(--line);
+    border-radius:6px;padding:6px 12px;color:var(--tag);cursor:pointer;
+  }
+  .root-chip.selected{border-color:var(--cta);color:var(--cta);}
+  .target-label{font-size:13px;color:var(--muted);}
+  .target-label b{color:var(--ink);font-family:'JetBrains Mono',monospace;font-weight:600;}
+  .reset-btn{
+    margin-left:auto;
+    background:transparent;border:1px solid var(--line);color:var(--muted);
+    border-radius:6px;padding:6px 12px;font-size:12px;cursor:pointer;
+  }
+  .reset-btn:hover{border-color:var(--cta);color:var(--cta);}
+ 
+  .canvas-area{flex:1;overflow-y:auto;padding:24px;}
+  #canvas-root{
+    min-height:200px;
+    border:2px dashed var(--line);
+    border-radius:10px;
+    padding:16px;
+    transition:border-color .15s;
+  }
+  #canvas-root.drag-over{border-color:var(--cta);}
+  .empty-state{
+    color:var(--muted);font-size:14px;text-align:center;
+    padding:40px 12px;
+  }
+ 
+  .el-node{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-left:3px solid var(--tag);
+    border-radius:8px;
+    margin-bottom:10px;
+    padding:10px;
+    cursor:grab;
+  }
+  .el-node.text,.el-node.media{border-left-color:var(--string);}
+  .el-node.selected{outline:2px solid var(--cta);outline-offset:1px;}
+  .el-node.dragging{opacity:.4;}
+  .el-head{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+  .el-head[data-select]{cursor:pointer;}
+  .tag-chip{
+    font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;
+    color:var(--tag);
+  }
+  .el-node.text .tag-chip,.el-node.media .tag-chip{color:var(--string);}
+  .del-btn{
+    background:transparent;border:none;color:var(--muted);
+    font-size:16px;line-height:1;cursor:pointer;padding:2px 6px;
+    border-radius:4px;
+  }
+  .del-btn:hover{background:#4a2233;color:#ff8fae;}
+  .slot{
+    margin-top:8px;
+    padding:10px;
+    border-radius:6px;
+    border:1px dashed var(--line);
+    min-height:36px;
+  }
+  .slot.drag-over{border-color:var(--cta);background:rgba(255,93,143,.06);}
+  .empty-hint{font-size:12px;color:var(--muted);opacity:.7;}
+  .content-input,.alt-input{
+    width:100%;margin-top:8px;
+    background:var(--surface-alt);
+    border:1px solid var(--line);
+    border-radius:6px;
+    padding:8px 10px;
+    color:var(--string);
+    font-family:'JetBrains Mono',monospace;
+    font-size:13px;
+  }
+  .content-input:focus,.alt-input:focus{outline:none;border-color:var(--string);}
+  .media-box{
+    display:flex;align-items:center;gap:10px;margin-top:8px;
+    font-size:20px;
+  }
+  .media-box .alt-input{margin-top:0;}
+ 
+  .code-ribbon{border-top:1px solid var(--line);background:var(--surface);}
+  .code-toggle{
+    width:100%;display:flex;align-items:center;justify-content:space-between;
+    background:transparent;border:none;color:var(--ink);
+    padding:12px 24px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:13px;
+  }
+  .code-toggle .chev{transition:transform .15s;color:var(--muted);}
+  .code-toggle.open .chev{transform:rotate(180deg);}
+  .code-wrap{max-height:0;overflow:hidden;transition:max-height .2s ease;}
+  .code-wrap.open{max-height:320px;}
+  .code-inner{
+    display:flex;align-items:flex-start;justify-content:space-between;
+    gap:12px;padding:0 24px 18px;
+  }
+  #code-output{
+    margin:0;flex:1;overflow:auto;max-height:280px;
+    font-family:'JetBrains Mono',monospace;font-size:12.5px;line-height:1.6;
+    color:var(--ink);white-space:pre;
+  }
+  .tk-tag{color:var(--tag);}
+  .copy-btn{
+    background:var(--surface-alt);border:1px solid var(--line);color:var(--muted);
+    border-radius:6px;padding:6px 12px;font-size:12px;cursor:pointer;white-space:nowrap;
+  }
+  .copy-btn:hover{border-color:var(--string);color:var(--string);}
+ 
+  @media(max-width:780px){
+    .builder{grid-template-columns:1fr;}
+    .palette{border-right:none;border-bottom:1px solid var(--line);}
+    h1.title{font-size:32px;}
+  }
+</style>
+</head>
+<body>
+ 
+<!-- ============ START SCREEN ============ -->
+<div id="screen-start" class="screen active">
+  <div class="start-wrap">
+    <div class="window">
+      <div class="window-bar">
+        <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+        <span class="filename">nest.html</span>
+      </div>
+      <div class="window-body">
+        <p class="eyebrow">an interactive practice tool</p>
+        <h1 class="title">Nest<span class="cursor"></span></h1>
+        <p class="subtitle">Build a webpage by choosing pieces instead of typing them. Every click writes real code behind the scenes, so you can see exactly how a page comes together — and fix it yourself next time you're vibe coding.</p>
+        <button class="start-cta" id="start-btn">Start building →</button>
+      </div>
+    </div>
+    <div class="roadmap" style="justify-content:center;">
+      <span class="step current">&lt;start&gt;</span>
+      <span class="arrow">→</span>
+      <span class="step">&lt;html&gt;</span>
+      <span class="arrow">→</span>
+      <span class="step">&lt;css&gt;</span>
+      <span class="arrow">→</span>
+      <span class="step">&lt;js&gt;</span>
+      <span class="arrow">→</span>
+      <span class="step">&lt;preview /&gt;</span>
+    </div>
+  </div>
+</div>
+ 
+<!-- ============ HTML SCREEN ============ -->
+<div id="screen-html" class="screen">
+  <div class="topbar">
+    <div class="roadmap">
+      <span class="step clickable" data-goto="start">&lt;start&gt;</span>
+      <span class="arrow">→</span>
+      <span class="step current">&lt;html&gt;</span>
+      <span class="arrow">→</span>
+      <span class="step">&lt;css&gt;</span>
+      <span class="arrow">→</span>
+      <span class="step">&lt;js&gt;</span>
+      <span class="arrow">→</span>
+      <span class="step">&lt;preview /&gt;</span>
+    </div>
+    <div class="legend">
+      <span><span class="swatch tag"></span>structure</span>
+      <span><span class="swatch text"></span>text & content</span>
+    </div>
+  </div>
+ 
+  <div class="builder">
+    <div class="palette">
+      <p class="palette-hint">Click a piece to add it. Click a piece already on your page to build inside it. Drag pieces to move them.</p>
+      <div id="palette-groups"></div>
+    </div>
+ 
+    <div class="canvas-col">
+      <div class="canvas-toolbar">
+        <button class="root-chip" id="root-chip" data-select="root">&lt;body&gt;</button>
+        <span class="target-label">Building inside: <b id="target-name">body</b></span>
+        <button class="reset-btn" id="reset-btn">Reset page</button>
+      </div>
+      <div class="canvas-area">
+        <div id="canvas-root" class="slot" data-parent="root"></div>
+      </div>
+      <div class="code-ribbon">
+        <button class="code-toggle" id="code-toggle">
+          <span>view generated code</span>
+          <span class="chev">⌄</span>
+        </button>
+        <div class="code-wrap" id="code-wrap">
+          <div class="code-inner">
+            <pre id="code-output"></pre>
+            <button class="copy-btn" id="copy-btn">copy</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+ 
+<script>
+const ELEMENT_DEFS = {
+  header:  {tag:'header',  label:'Header',   type:'structure'},
+  nav:     {tag:'nav',     label:'Navbar',   type:'structure'},
+  main:    {tag:'main',    label:'Main',     type:'structure'},
+  section: {tag:'section', label:'Section',  type:'structure'},
+  footer:  {tag:'footer',  label:'Footer',   type:'structure'},
+  div:     {tag:'div',     label:'Div',      type:'structure'},
+  card:    {tag:'div', className:'card', label:'Card', type:'structure'},
+  h1: {tag:'h1', label:'Heading 1', type:'text', placeholder:'Big headline goes here'},
+  h2: {tag:'h2', label:'Heading 2', type:'text', placeholder:'Section heading'},
+  h3: {tag:'h3', label:'Heading 3', type:'text', placeholder:'Sub heading'},
+  p:  {tag:'p',  label:'Paragraph', type:'text', placeholder:'Write a sentence here'},
+  span: {tag:'span', label:'Label text', type:'text', placeholder:'short label'},
+  button: {tag:'button', label:'Button', type:'text', placeholder:'Click me'},
+  a: {tag:'a', label:'Link', type:'text', placeholder:'Link text'},
+  img: {tag:'img', label:'Image', type:'media'}
+};
+ 
+const GROUPS = [
+  {name:'Structure', desc:'Hold other pieces inside them', keys:['header','nav','main','section','footer','div']},
+  {name:'Text',      desc:'Words on the page', keys:['h1','h2','h3','p','span']},
+  {name:'Content',   desc:'Common building blocks', keys:['card','button','a','img']}
+];
+ 
+const state = { tree: [], selected: 'root', counter: 0 };
+let draggedId = null;
+ 
+function escapeHtml(str){
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+ 
+function findById(arr, id){
+  for(const node of arr){
+    if(node.id === id) return node;
+    if(node.children){
+      const found = findById(node.children, id);
+      if(found) return found;
+    }
+  }
+  return null;
+}
+ 
+function removeById(arr, id){
+  for(let i=0;i<arr.length;i++){
+    if(arr[i].id === id){ arr.splice(i,1); return true; }
+    if(arr[i].children && removeById(arr[i].children, id)) return true;
+  }
+  return false;
+}
+ 
+function isDescendant(node, targetId){
+  if(!node.children) return false;
+  for(const c of node.children){
+    if(c.id === targetId) return true;
+    if(isDescendant(c, targetId)) return true;
+  }
+  return false;
+}
+ 
+function addElement(key){
+  const def = ELEMENT_DEFS[key];
+  const node = { id: 'n' + (state.counter++), key, content: '', children: def.type === 'structure' ? [] : undefined };
+ 
+  let parentArr = state.tree;
+  if(state.selected !== 'root'){
+    const parentNode = findById(state.tree, state.selected);
+    if(parentNode && parentNode.children){
+      parentArr = parentNode.children;
+    } else {
+      state.selected = 'root';
+    }
+  }
+  parentArr.push(node);
+  if(def.type === 'structure') state.selected = node.id;
+  render();
+}
+ 
+function deleteNode(id){
+  if(state.selected === id) state.selected = 'root';
+  removeById(state.tree, id);
+  render();
+}
+ 
+function selectNode(id){
+  if(id !== 'root'){
+    const node = findById(state.tree, id);
+    if(!node || !ELEMENT_DEFS[node.key] || ELEMENT_DEFS[node.key].type !== 'structure') return;
+  }
+  state.selected = id;
+  render();
+}
+ 
+function updateContent(id, val){
+  const node = findById(state.tree, id);
+  if(node){ node.content = val; updateCode(); }
+}
+ 
+function moveNode(id, newParentId){
+  if(id === newParentId) return;
+  const node = findById(state.tree, id);
+  if(!node) return;
+  if(newParentId !== 'root'){
+    const dest = findById(state.tree, newParentId);
+    if(!dest || !dest.children) return;
+    if(isDescendant(node, newParentId)) return;
+  }
+  removeById(state.tree, id);
+  if(newParentId === 'root'){
+    state.tree.push(node);
+  } else {
+    findById(state.tree, newParentId).children.push(node);
+  }
+  render();
+}
+ 
+function renderNode(node){
+  const def = ELEMENT_DEFS[node.key];
+  const openTag = def.className ? `${def.tag} class="${def.className}"` : def.tag;
+  let inner = '';
+  if(def.type === 'structure'){
+    const kids = node.children.length
+      ? node.children.map(renderNode).join('')
+      : '<span class="empty-hint">drop or add pieces here</span>';
+    inner = `<div class="slot" data-parent="${node.id}">${kids}</div>`;
+  } else if(def.type === 'text'){
+    inner = `<input class="content-input" data-id="${node.id}" placeholder="${escapeHtml(def.placeholder)}" value="${escapeHtml(node.content||'')}">`;
+  } else if(def.type === 'media'){
+    inner = `<div class="media-box"><span>🖼</span><input class="alt-input" data-id="${node.id}" placeholder="describe the image (this becomes the alt text)" value="${escapeHtml(node.content||'')}"></div>`;
+  }
+  const headSelect = def.type === 'structure' ? ` data-select="${node.id}"` : '';
+  return `<div class="el-node ${def.type} ${node.id===state.selected?'selected':''}" data-id="${node.id}" draggable="true">
+    <div class="el-head"${headSelect}>
+      <span class="tag-chip">&lt;${escapeHtml(openTag)}&gt;</span>
+      <button class="del-btn" data-del="${node.id}" aria-label="remove">×</button>
+    </div>
+    ${inner}
+  </div>`;
+}
+ 
+function updateTargetLabel(){
+  const rootChip = document.getElementById('root-chip');
+  const label = document.getElementById('target-name');
+  if(state.selected === 'root'){
+    rootChip.classList.add('selected');
+    label.textContent = 'body';
+  } else {
+    rootChip.classList.remove('selected');
+    const node = findById(state.tree, state.selected);
+    label.textContent = node ? ELEMENT_DEFS[node.key].tag : 'body';
+  }
+}
+ 
+function nodeLines(node, depth){
+  const def = ELEMENT_DEFS[node.key];
+  const indent = '  '.repeat(depth);
+  if(def.type === 'text'){
+    const content = (node.content && node.content.trim()) ? node.content : def.placeholder;
+    return [`${indent}<${def.tag}>${content}</${def.tag}>`];
+  }
+  if(def.type === 'media'){
+    const alt = (node.content && node.content.trim()) ? node.content : 'describe the image';
+    return [`${indent}<img src="your-image.jpg" alt="${alt}">`];
+  }
+  const openTag = def.className ? `<${def.tag} class="${def.className}">` : `<${def.tag}>`;
+  const childLines = node.children.length
+    ? node.children.flatMap(c => nodeLines(c, depth+1))
+    : [`${indent}  <!-- empty -->`];
+  return [`${indent}${openTag}`, ...childLines, `${indent}</${def.tag}>`];
+}
+ 
+function buildCode(){
+  const lines = ['<!DOCTYPE html>', '<html>', '<head>', '  <title>My Page</title>', '</head>', '<body>'];
+  if(state.tree.length === 0){
+    lines.push('  <!-- add pieces on the left to see them here -->');
+  } else {
+    state.tree.forEach(n => lines.push(...nodeLines(n, 1)));
+  }
+  lines.push('</body>', '</html>');
+  return lines.join('\n');
+}
+ 
+function highlightTags(escapedText){
+  return escapedText.replace(/(&lt;\/?[a-zA-Z][\w-]*(?:\s+[\w-]+=&quot;[^&]*?&quot;)*\s*\/?&gt;)/g, '<span class="tk-tag">$1</span>');
+}
+ 
+function updateCode(){
+  const plain = buildCode();
+  state.plainCode = plain;
+  document.getElementById('code-output').innerHTML = highlightTags(escapeHtml(plain));
+}
+ 
+function render(){
+  const canvasRoot = document.getElementById('canvas-root');
+  canvasRoot.innerHTML = state.tree.length
+    ? state.tree.map(renderNode).join('')
+    : '<div class="empty-state">Your page is empty — pick something on the left to start building.</div>';
+  updateTargetLabel();
+  updateCode();
+}
+ 
+function renderPalette(){
+  const wrap = document.getElementById('palette-groups');
+  wrap.innerHTML = GROUPS.map(group => `
+    <div class="group">
+      <p class="group-name">${group.name}</p>
+      <p class="group-desc">${group.desc}</p>
+      <div class="pill-grid">
+        ${group.keys.map(key => {
+          const def = ELEMENT_DEFS[key];
+          return `<button class="pill type-${def.type}" data-add="${key}">
+            <span class="pill-tag">&lt;${def.tag}&gt;</span>
+            <span class="pill-label">${def.label}</span>
+          </button>`;
+        }).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+ 
+/* ---- wiring ---- */
+document.getElementById('start-btn').addEventListener('click', () => goto('html'));
+document.querySelectorAll('[data-goto]').forEach(el => {
+  el.addEventListener('click', () => goto(el.dataset.goto));
+});
+function goto(name){
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+}
+ 
+document.getElementById('palette-groups').addEventListener('click', e => {
+  const btn = e.target.closest('[data-add]');
+  if(btn) addElement(btn.dataset.add);
+});
+renderPalette();
+ 
+const canvasArea = document.querySelector('.canvas-area');
+document.getElementById('root-chip').addEventListener('click', () => selectNode('root'));
+ 
+canvasArea.addEventListener('click', e => {
+  const delBtn = e.target.closest('[data-del]');
+  if(delBtn){ deleteNode(delBtn.dataset.del); return; }
+  const sel = e.target.closest('[data-select]');
+  if(sel){ selectNode(sel.dataset.select); return; }
+});
+ 
+canvasArea.addEventListener('input', e => {
+  if(e.target.classList.contains('content-input') || e.target.classList.contains('alt-input')){
+    updateContent(e.target.dataset.id, e.target.value);
+  }
+});
+ 
+canvasArea.addEventListener('dragstart', e => {
+  const node = e.target.closest('.el-node');
+  if(node){
+    draggedId = node.dataset.id;
+    e.dataTransfer.setData('text/plain', draggedId);
+    node.classList.add('dragging');
+  }
+});
+canvasArea.addEventListener('dragend', e => {
+  const node = e.target.closest('.el-node');
+  if(node) node.classList.remove('dragging');
+});
+canvasArea.addEventListener('dragover', e => {
+  e.preventDefault();
+  const slot = e.target.closest('.slot');
+  document.querySelectorAll('.slot.drag-over').forEach(s => s.classList.remove('drag-over'));
+  if(slot) slot.classList.add('drag-over');
+});
+canvasArea.addEventListener('drop', e => {
+  e.preventDefault();
+  document.querySelectorAll('.slot.drag-over').forEach(s => s.classList.remove('drag-over'));
+  const slot = e.target.closest('.slot');
+  if(!slot) return;
+  const id = e.dataTransfer.getData('text/plain') || draggedId;
+  moveNode(id, slot.dataset.parent);
+});
+ 
+document.getElementById('reset-btn').addEventListener('click', () => {
+  if(confirm('Clear everything you\'ve built so far?')){
+    state.tree = [];
+    state.selected = 'root';
+    render();
+  }
+});
+ 
+const codeToggle = document.getElementById('code-toggle');
+const codeWrap = document.getElementById('code-wrap');
+codeToggle.addEventListener('click', () => {
+  codeToggle.classList.toggle('open');
+  codeWrap.classList.toggle('open');
+});
+ 
+document.getElementById('copy-btn').addEventListener('click', () => {
+  navigator.clipboard.writeText(state.plainCode || '').then(() => {
+    const btn = document.getElementById('copy-btn');
+    const old = btn.textContent;
+    btn.textContent = 'copied!';
+    setTimeout(() => btn.textContent = old, 1200);
+  });
+});
+ 
+render();
+</script>
+</body>
+</html>
