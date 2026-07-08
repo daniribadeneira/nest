@@ -1476,7 +1476,8 @@ function renderPreviewNode(node, referencedIds){
  
   if(def.type === 'text'){
     const content = (node.content && node.content.trim()) ? escapeHtml(node.content) : escapeHtml(def.placeholder);
-    const styleAttr = styleStr ? ` style="${styleStr}"` : '';
+    const defaultStyle = 'margin:0;';
+    const styleAttr = ` style="${defaultStyle}${styleStr ? ';' + styleStr : ''}"`;
     return `<${def.tag}${idAttr}${classAttr}${styleAttr}>${content}</${def.tag}>`;
   }
   if(def.type === 'media'){
