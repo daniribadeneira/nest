@@ -896,21 +896,30 @@ const PADDING_OPTIONS = [
 const CSS_PROP_MAP = {
   fontFamily:'font-family', fontSize:'font-size', fontWeight:'font-weight',
   textAlign:'text-align', textDecoration:'text-decoration',
-  padding:'padding', borderRadius:'border-radius'
+  padding:'padding', borderRadius:'border-radius',
+  textColor:'color', background:'background'
 };
+ 
+function buildColorRoleOptions(){
+  return [{value:'', label:'Default'}].concat(
+    COLOR_ROLES.map(r => ({value:`var(--color-${r.key})`, label:r.label}))
+  );
+}
  
 function textSchema(withDecoration){
   const props = [
     {key:'fontFamily', label:'Font', options:FONT_FAMILY_OPTIONS},
     {key:'fontSize', label:'Size', options:FONT_SIZE_OPTIONS},
     {key:'fontWeight', label:'Weight', options:FONT_WEIGHT_OPTIONS},
-    {key:'textAlign', label:'Alignment', options:TEXT_ALIGN_OPTIONS}
+    {key:'textAlign', label:'Alignment', options:TEXT_ALIGN_OPTIONS},
+    {key:'textColor', label:'Color', options:buildColorRoleOptions()}
   ];
   if(withDecoration) props.push({key:'textDecoration', label:'Underline', options:DECORATION_OPTIONS});
   return props;
 }
 function boxSchema(){
   return [
+    {key:'background', label:'Background', options:buildColorRoleOptions()},
     {key:'padding', label:'Padding', options:PADDING_OPTIONS},
     {key:'borderRadius', label:'Corners', options:RADIUS_OPTIONS}
   ];
@@ -924,7 +933,10 @@ const STYLE_SCHEMA = {
   a: textSchema(true),
   button: textSchema().concat(boxSchema()),
   card: boxSchema(),
-  img: [{key:'borderRadius', label:'Corners', options:RADIUS_OPTIONS}]
+  img: [
+    {key:'background', label:'Background', options:buildColorRoleOptions()},
+    {key:'borderRadius', label:'Corners', options:RADIUS_OPTIONS}
+  ]
 };
  
 const SAMPLE_TEXT = {
