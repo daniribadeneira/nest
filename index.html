@@ -417,14 +417,15 @@
  
   /* ---------- preview screen ---------- */
   .preview-final-area{
-    flex:1;overflow-y:auto;padding:32px 40px;
-    max-width:1140px;margin:0 auto;width:100%;
+    flex:1;display:flex;flex-direction:column;min-height:0;
+    padding:20px 24px;width:100%;
   }
   .browser-frame{
     border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--surface);
+    flex:1;display:flex;flex-direction:column;min-height:0;
   }
   .browser-bar{
-    display:flex;align-items:center;gap:8px;padding:10px 14px;
+    display:flex;align-items:center;gap:8px;padding:10px 14px;flex:none;
     background:var(--surface-alt);border-bottom:1px solid var(--line);
   }
   .browser-url{
@@ -432,9 +433,9 @@
     background:var(--surface);border:1px solid var(--line);border-radius:4px;
     padding:3px 12px;flex:1;
   }
-  .browser-body{padding:24px;min-height:160px;}
-  .preview-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:20px 0;}
-  .bordered-ribbon{border:1px solid var(--line);border-radius:10px;}
+  .browser-body{padding:40px;flex:1;overflow-y:auto;}
+  .preview-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:16px 0;flex:none;}
+  .bordered-ribbon{border:1px solid var(--line);border-radius:10px;flex:none;}
  
   .preview-panel{display:flex;flex-direction:column;min-height:0;}
   .preview-area{flex:1;overflow-y:auto;padding:28px;}
@@ -1088,6 +1089,11 @@ const PADDING_OPTIONS = [
   {value:'14px 22px', label:'Medium'},
   {value:'20px 32px', label:'Large'}
 ];
+const LAYOUT_OPTIONS = [
+  {value:'', label:'Default (stacked)'},
+  {value:'row', label:'Side by side'},
+  {value:'row-spaced', label:'Side by side, spread out'}
+];
  
 const CSS_PROP_MAP = {
   fontFamily:'font-family', fontSize:'font-size', fontWeight:'font-weight',
@@ -1095,6 +1101,17 @@ const CSS_PROP_MAP = {
   padding:'padding', borderRadius:'border-radius',
   textColor:'color', background:'background'
 };
+ 
+const LAYOUT_DECLARATIONS = {
+  row: [['display','flex'],['align-items','center'],['gap','12px'],['flex-wrap','wrap']],
+  'row-spaced': [['display','flex'],['align-items','center'],['justify-content','space-between'],['flex-wrap','wrap']]
+};
+ 
+function expandStyleProp(key, value){
+  if(!value) return [];
+  if(key === 'layout') return LAYOUT_DECLARATIONS[value] || [];
+  return [[CSS_PROP_MAP[key], value]];
+}
  
 function buildColorRoleOptions(){
   return [{value:'', label:'Default'}].concat(
@@ -1116,6 +1133,7 @@ function textSchema(withDecoration){
 function boxSchema(){
   return [
     {key:'background', label:'Background', options:buildColorRoleOptions()},
+    {key:'layout', label:'Layout', options:LAYOUT_OPTIONS},
     {key:'padding', label:'Padding', options:PADDING_OPTIONS},
     {key:'borderRadius', label:'Corners', options:RADIUS_OPTIONS}
   ];
@@ -1173,10 +1191,11 @@ function getEffectiveStyle(key){
  
 function getInlineStyleFor(key){
   const props = getEffectiveStyle(key);
-  return Object.entries(props)
-    .filter(([k, v]) => v)
-    .map(([k, v]) => `${CSS_PROP_MAP[k]}:${v}`)
-    .join(';');
+  const decls = [];
+  Object.entries(props).forEach(([k, v]) => {
+    expandStyleProp(k, v).forEach(([prop, val]) => decls.push(`${prop}:${val}`));
+  });
+  return decls.join(';');
 }
  
 function renderSample(key){
@@ -1192,7 +1211,8 @@ function renderSample(key){
   } else if(def.type === 'text'){
     sampleHtml = `<${def.tag} style="margin:0;color:var(--ink);${combined}">${SAMPLE_TEXT[key]}</${def.tag}>`;
   } else {
-    sampleHtml = `<div style="background:var(--surface-alt);border:1px dashed var(--line);color:var(--muted);font-size:12px;padding:10px;${combined}">${SAMPLE_TEXT[key] || 'content here'}</div>`;
+    const chips = '<span style="background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:4px 10px;">Item 1</span><span style="background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:4px 10px;">Item 2</span><span style="background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:4px 10px;">Item 3</span>';
+    sampleHtml = `<div style="background:var(--surface-alt);border:1px dashed var(--line);color:var(--muted);font-size:12px;padding:10px;${combined}">${chips}</div>`;
   }
   wrap.innerHTML = `<p class="style-sample-label">preview</p><div class="style-sample-box">${sampleHtml}</div>`;
 }
@@ -1247,12 +1267,15 @@ function buildStyleRules(){
   const blocks = [];
   GROUPS.flatMap(g => g.keys).forEach(key => {
     const props = getEffectiveStyle(key);
-    const entries = Object.entries(props).filter(([k, v]) => v);
-    if(entries.length === 0) return;
+    const decls = [];
+    Object.entries(props).forEach(([k, v]) => {
+      expandStyleProp(k, v).forEach(([prop, val]) => decls.push([prop, val]));
+    });
+    if(decls.length === 0) return;
     const def = ELEMENT_DEFS[key];
     const selector = def.className ? `.${def.className}` : def.tag;
     const lines = [`${selector} {`];
-    entries.forEach(([k, v]) => lines.push(`  ${CSS_PROP_MAP[k]}: ${v};`));
+    decls.forEach(([prop, val]) => lines.push(`  ${prop}: ${val};`));
     lines.push('}');
     blocks.push(lines.join('\n'));
   });
