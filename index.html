@@ -1572,7 +1572,13 @@ function renderPropPanel(){
   const sections = [];
   if(def.kind === 'text' || def.kind === 'media') sections.push(renderContentSection(node, def));
   if(def.kind === 'text') sections.push(renderTypographySection(node));
-  if(def.kind === 'container') sections.push(renderLayoutSection(node));
+  if(
+    def.kind === 'container' ||
+    def.tag === 'button' ||
+    def.tag === 'img'
+){
+    sections.push(renderLayoutSection(node));
+}
   sections.push(renderSpacingSection(node));
   sections.push(renderAppearanceSection(node));
   bodyEl.innerHTML = sections.join('');
