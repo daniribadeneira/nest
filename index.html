@@ -265,7 +265,8 @@ button,input,select,textarea{font-family:inherit;}
 /* elements rendered live in the canvas / preview */
 .nest-el{position:relative;transition:box-shadow .15s var(--ease), outline-color .15s var(--ease);}
 .nest-el.is-empty-container{min-height:44px;}
-.nest-el[data-editable="true"]{cursor:pointer;}
+.nest-el[data-editable="true"]{cursor:pointer;outline:1px solid var(--line-soft);outline-offset:-1px;}
+.nest-el[data-editable="true"]:hover{outline-color:var(--muted-dim);}
 .nest-el.hovered{outline:1.5px solid var(--muted-dim);outline-offset:-1.5px;}
 .nest-el.selected{outline:2px solid var(--focus);outline-offset:-2px;}
 .nest-el.drag-over-inside{outline:2px dashed var(--cta) !important;background-color:rgba(255,93,143,.06);}
@@ -274,14 +275,24 @@ button,input,select,textarea{font-family:inherit;}
   font-size:11.5px;color:var(--muted-dim);border:1px dashed var(--line);border-radius:6px;
   padding:10px;text-align:center;
 }
-.el-chip{
-  position:fixed;z-index:9999;display:none;align-items:center;gap:6px;
-  background:var(--focus);color:#fff;border-radius:5px;
-  padding:3px 8px;font-family:'JetBrains Mono',monospace;font-size:10.5px;font-weight:600;
-  white-space:nowrap;pointer-events:none;transition:top .08s linear, left .08s linear;
+/* per-element label, embedded (not floating) so it can never drift out of
+   reach while trying to click delete — it's a real part of the element. */
+.el-label{
+  position:absolute;top:4px;left:4px;z-index:5;
+  display:flex;align-items:center;gap:5px;
+  background:var(--surface-alt);border:1px solid var(--line);border-radius:5px;
+  padding:2px 6px;font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;
+  color:var(--muted-dim);opacity:.6;white-space:nowrap;
+  transition:opacity .12s var(--ease), color .12s var(--ease), background .12s var(--ease), border-color .12s var(--ease);
+  pointer-events:none;
 }
-.el-chip .el-chip-del{pointer-events:auto;cursor:pointer;opacity:.85;}
-.el-chip .el-chip-del:hover{opacity:1;}
+.nest-el:hover > .el-label,
+.nest-el.hovered > .el-label,
+.nest-el.selected > .el-label{
+  opacity:1;color:#fff;background:var(--focus);border-color:var(--focus);
+}
+.el-label-del{pointer-events:auto;cursor:pointer;opacity:.85;padding:0 1px;}
+.el-label-del:hover{opacity:1;}
 .drop-indicator-line{
   position:fixed;background:var(--cta);border-radius:2px;z-index:9998;pointer-events:none;
   display:none;box-shadow:0 0 0 3px rgba(255,93,143,.25);
@@ -301,6 +312,31 @@ button,input,select,textarea{font-family:inherit;}
 .dom-row .dom-tagname{color:var(--tag);}
 .dom-row.dom-type-text .dom-tagname{color:var(--string);}
 .dom-tree-empty{padding:20px 12px;font-size:12px;color:var(--muted);opacity:.75;}
+ 
+/* --- html screen: edit/code side panel --- */
+.side-panel-toggle{
+  display:flex;gap:2px;background:var(--surface-alt);border:1px solid var(--line);
+  border-radius:8px;padding:3px;margin-bottom:2px;
+}
+.side-toggle-btn{
+  flex:1;border:none;background:transparent;color:var(--muted);
+  font-family:'JetBrains Mono',monospace;font-size:11.5px;font-weight:600;
+  padding:7px 10px;border-radius:6px;cursor:pointer;transition:background .15s var(--ease), color .15s var(--ease);
+}
+.side-toggle-btn:hover{color:var(--ink);}
+.side-toggle-btn.active{background:var(--surface-raised);color:var(--ink);border:1px solid var(--focus);}
+.field-textarea{
+  width:100%;background:var(--surface-alt);border:1px solid var(--line);border-radius:6px;
+  padding:9px 10px;color:var(--ink);font-family:'Inter',sans-serif;font-size:13px;
+  resize:vertical;min-height:80px;margin-top:6px;
+}
+.field-textarea:focus{outline:none;border-color:var(--focus);}
+.side-code-view{padding:14px 16px;}
+.side-code-view pre{
+  margin:0;font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.65;
+  color:var(--ink);white-space:pre-wrap;word-break:break-word;
+}
+.side-code-view .btn{margin-top:12px;width:100%;}
  
 /* =========================================================
    CSS BUILDER — picker | canvas | property panel
@@ -486,15 +522,20 @@ button,input,select,textarea{font-family:inherit;}
           <div class="canvas-page" id="canvas-page" data-node-id="root"></div>
         </div>
       </div>
-      <div class="panel" id="dom-tree-panel">
+      <div class="panel" id="html-side-panel">
         <div class="panel-header">
-          <p class="panel-title">DOM Tree</p>
-          <p class="panel-sub">Live structure of your page</p>
+          <div class="side-panel-toggle">
+            <button class="side-toggle-btn active" type="button" data-side-mode="edit">Edit</button>
+            <button class="side-toggle-btn" type="button" data-side-mode="code">Code</button>
+          </div>
         </div>
-        <div class="dom-tree" id="dom-tree-html"></div>
+        <div class="panel-body" id="html-edit-mode"></div>
+        <div class="side-code-view" id="html-code-mode" style="display:none;">
+          <pre><code id="html-code-output"></code></pre>
+          <button class="btn" id="html-code-copy-btn" type="button">copy</button>
+        </div>
       </div>
     </div>
-    <div class="code-panel" id="html-code-panel"></div>
   </section>
  
   <!-- ============ CSS BUILDER ============ -->
@@ -576,7 +617,6 @@ button,input,select,textarea{font-family:inherit;}
  
 </main>
 </div>
-<div class="el-chip" id="floating-chip"><span id="floating-chip-label"></span><span class="el-chip-del" id="floating-chip-del">×</span></div>
 <div class="drop-indicator-line" id="drop-indicator"></div>
 <div class="inspect-badge" id="inspect-badge" style="display:none;"></div>
  
@@ -829,21 +869,23 @@ function renderElementNode(node, opts){
   const classNames = ['nest-el', isSelected ? 'selected' : '', isHovered ? 'hovered' : ''].filter(Boolean).join(' ');
   const classAttr = def.className ? `${def.className} ${classNames}` : classNames;
   const editableAttr = opts.editable ? ' data-editable="true" draggable="true"' : ' data-editable="false"';
+  const label = opts.editable
+    ? `<span class="el-label"><span>&lt;${def.tag}&gt;</span><span class="el-label-del" data-del="${node.id}">×</span></span>`
+    : '';
  
   if(def.kind === 'text'){
     const content = node.content && node.content.trim() ? node.content : def.placeholder;
-    const editAttr = opts.editable ? ' contenteditable="true" spellcheck="false"' : '';
-    return `<${def.tag} id="${node.id}" data-node-id="${node.id}" class="${classAttr}" style="${inlineStyleFor(node)}"${editableAttr}${editAttr}>${escapeHtml(content)}</${def.tag}>`;
+    return `<${def.tag} id="${node.id}" data-node-id="${node.id}" class="${classAttr}" style="${inlineStyleFor(node)}"${editableAttr}>${label}${escapeHtml(content)}</${def.tag}>`;
   }
   if(def.kind === 'media'){
     const base = 'display:flex;align-items:center;justify-content:center;min-height:90px;font-size:22px;background:var(--surface-alt);border:1px dashed var(--line);';
-    return `<div id="${node.id}" data-node-id="${node.id}" class="${classAttr}" style="${base}${inlineStyleFor(node)}"${editableAttr} title="${escapeHtml(node.content || 'image')}">🖼</div>`;
+    return `<div id="${node.id}" data-node-id="${node.id}" class="${classAttr}" style="${base}${inlineStyleFor(node)}"${editableAttr} title="${escapeHtml(node.content || 'image')}">${label}🖼</div>`;
   }
   const kids = (node.children || []).map(c => renderElementNode(c, opts)).join('');
   const isEmpty = !node.children || node.children.length === 0;
   const emptyHint = isEmpty ? '<span class="empty-slot-hint">drop pieces here</span>' : '';
   const emptyClass = isEmpty ? ' is-empty-container' : '';
-  return `<${def.tag} id="${node.id}" data-node-id="${node.id}" class="${classAttr}${emptyClass}" style="${inlineStyleFor(node)}"${editableAttr}>${kids}${emptyHint}</${def.tag}>`;
+  return `<${def.tag} id="${node.id}" data-node-id="${node.id}" class="${classAttr}${emptyClass}" style="${inlineStyleFor(node)}"${editableAttr}>${label}${kids}${emptyHint}</${def.tag}>`;
 }
  
 function renderTreeInto(containerEl, opts){
@@ -853,24 +895,8 @@ function renderTreeInto(containerEl, opts){
 }
  
 /* =========================================================================
-   5. FLOATING CHIP + SELECTION/HOVER (shared across editable canvas)
+   5. SELECTION/HOVER (shared across editable canvas)
    ========================================================================= */
-const floatingChip = document.getElementById('floating-chip');
-const floatingChipLabel = document.getElementById('floating-chip-label');
-const floatingChipDel = document.getElementById('floating-chip-del');
- 
-function showFloatingChipFor(el, node){
-  if(!el || !node){ floatingChip.style.display = 'none'; return; }
-  const rect = el.getBoundingClientRect();
-  const def = ELEMENT_DEFS[node.key];
-  floatingChipLabel.textContent = `<${def.tag}>`;
-  floatingChip.style.display = 'flex';
-  floatingChip.style.top = Math.max(rect.top - 22, 4) + 'px';
-  floatingChip.style.left = rect.left + 'px';
-  floatingChipDel.dataset.del = node.id;
-  floatingChipDel.style.display = state.selectedId === node.id ? 'inline' : 'none';
-}
-function hideFloatingChip(){ floatingChip.style.display = 'none'; }
  
 /* =========================================================================
    6. DOM TREE RENDERER (reused: html screen, css screen, js screen)
@@ -1234,6 +1260,8 @@ function wireCanvasEvents(pageEl, opts){
     if(el) el.classList.remove('dragging');
   });
   pageEl.addEventListener('click', e => {
+    const delBtn = e.target.closest('[data-del]');
+    if(delBtn){ e.stopPropagation(); deleteSelectedNode(delBtn.dataset.del); return; }
     const el = e.target.closest('.nest-el');
     if(!el) return;
     if(opts.onSelect) opts.onSelect(el.dataset.nodeId);
@@ -1244,39 +1272,18 @@ function wireCanvasEvents(pageEl, opts){
     state.hoveredId = el.dataset.nodeId;
     highlightHoveredInCanvases();
     syncHoverHighlights();
-    if(opts.showChip){
-      const node = findById(state.tree, el.dataset.nodeId);
-      showFloatingChipFor(el, node);
-    }
   });
   pageEl.addEventListener('mouseleave', () => {
     state.hoveredId = null;
     highlightHoveredInCanvases();
     syncHoverHighlights();
-    if(opts.showChip) hideFloatingChip();
   });
-  if(opts.editableText){
-    pageEl.addEventListener('input', e => {
-      const el = e.target.closest('[contenteditable="true"]');
-      if(!el) return;
-      const node = findById(state.tree, el.dataset.nodeId);
-      if(node){ node.content = el.textContent; refreshContentOnly(); }
-    });
-  }
 }
- 
-document.getElementById('floating-chip-del').addEventListener('click', e => {
-  e.stopPropagation();
-  const id = e.target.dataset.del;
-  if(!id) return;
-  deleteSelectedNode(id);
-});
  
 function deleteSelectedNode(id){
   if(state.selectedId === id) state.selectedId = null;
   removeById(state.tree, id);
   delete state.interactions[id];
-  hideFloatingChip();
   refreshStructural();
 }
  
@@ -2001,15 +2008,26 @@ function highlightFullLine(text, line){
   return highlightHtmlLine(text);
 }
  
-function renderPreviewScreen(){
-  const root = document.getElementById('final-preview-root');
+// applies the person's chosen palette as real CSS custom properties (so
+// var(--color-main) etc. actually resolve) plus a real page background/text
+// color, so every canvas — not just the final Preview — looks like a real
+// designed page instead of the tool's own dark UI showing through.
+function applyPageBackdrop(containerEl){
   if(state.tree.length === 0){
-    root.removeAttribute('style');
-    root.innerHTML = '<p class="preview-empty-hint">You haven\'t built anything yet — start with the HTML screen.</p>';
+    containerEl.removeAttribute('style');
     return;
   }
   const vars = COLOR_ROLES.map(r => `--color-${r.key}:${colorState[r.key]}`).join(';');
-  root.setAttribute('style', `${vars};min-height:100%;background:${colorState.light};color:${colorState.dark};font-family:'Inter',sans-serif;padding:32px;`);
+  containerEl.setAttribute('style', `${vars};min-height:100%;background:${colorState.light};color:${colorState.dark};font-family:'Inter',sans-serif;padding:32px;`);
+}
+ 
+function renderPreviewScreen(){
+  const root = document.getElementById('final-preview-root');
+  applyPageBackdrop(root);
+  if(state.tree.length === 0){
+    root.innerHTML = '<p class="preview-empty-hint">You haven\'t built anything yet — start with the HTML screen.</p>';
+    return;
+  }
   root.innerHTML = state.tree.map(n => renderElementNode(n, {editable:false})).join('');
   attachLiveInteractions(root, null);
 }
@@ -2095,38 +2113,87 @@ document.getElementById('html-reset-btn').addEventListener('click', () => {
    ========================================================================= */
 function renderHtmlScreenCanvasOnly(){
   renderTreeInto(document.getElementById('canvas-page'), {editable:true, emptyMessage:'Drag pieces from the left to start building.'});
-  renderDomTreeInto(document.getElementById('dom-tree-html'));
 }
 function renderCssScreenCanvasOnly(){
   renderColorRoles();
   renderDomTreeInto(document.getElementById('dom-tree-css'));
-  renderTreeInto(document.getElementById('css-canvas-page'), {editable:false, emptyMessage:'Build something in the HTML screen first.'});
+  const cssCanvas = document.getElementById('css-canvas-page');
+  applyPageBackdrop(cssCanvas);
+  renderTreeInto(cssCanvas, {editable:false, emptyMessage:'Build something in the HTML screen first.'});
 }
 function renderJsScreenCanvasOnly(){
   renderDomTreeInto(document.getElementById('dom-tree-js'));
-  renderTreeInto(document.getElementById('js-canvas-page'), {editable:false, emptyMessage:'Build something in the HTML screen first.'});
-  attachLiveInteractions(document.getElementById('js-canvas-page'), 'js-preview-status');
+  const jsCanvas = document.getElementById('js-canvas-page');
+  applyPageBackdrop(jsCanvas);
+  renderTreeInto(jsCanvas, {editable:false, emptyMessage:'Build something in the HTML screen first.'});
+  attachLiveInteractions(jsCanvas, 'js-preview-status');
 }
  
+// --- html screen: Edit / Code toggle side panel ---
+let htmlSideMode = 'edit';
+function setHtmlSideMode(mode){
+  htmlSideMode = mode;
+  document.querySelectorAll('#html-side-panel .side-toggle-btn').forEach(b => b.classList.toggle('active', b.dataset.sideMode === mode));
+  document.getElementById('html-edit-mode').style.display = mode === 'edit' ? 'block' : 'none';
+  document.getElementById('html-code-mode').style.display = mode === 'code' ? 'block' : 'none';
+}
+document.querySelectorAll('#html-side-panel .side-toggle-btn').forEach(btn => {
+  btn.addEventListener('click', () => setHtmlSideMode(btn.dataset.sideMode));
+});
+ 
+function renderHtmlEditPanel(){
+  const wrap = document.getElementById('html-edit-mode');
+  const node = state.selectedId ? findById(state.tree, state.selectedId) : null;
+  if(!node){
+    wrap.innerHTML = '<p class="panel-title">Content</p><p class="prop-empty">Click a piece on the page to edit its text.</p>';
+    return;
+  }
+  const def = ELEMENT_DEFS[node.key];
+  if(def.kind === 'container'){
+    wrap.innerHTML = `<p class="panel-title">&lt;${def.tag}&gt;</p><p class="panel-sub">${def.label}</p><p class="prop-empty">This piece holds other pieces — select a text or image piece inside it to edit its content.</p>`;
+    return;
+  }
+  const isMedia = def.kind === 'media';
+  wrap.innerHTML = `
+    <p class="panel-title">&lt;${def.tag}&gt;</p>
+    <p class="panel-sub">${def.label}</p>
+    <label class="field-label" style="margin-top:14px;">${isMedia ? 'Alt text' : 'Text content'}</label>
+    <textarea class="field-textarea" id="html-content-field" rows="4" placeholder="${escapeHtml(isMedia ? 'describe the image' : (def.placeholder || ''))}">${escapeHtml(node.content || '')}</textarea>
+  `;
+}
+document.getElementById('html-edit-mode').addEventListener('input', e => {
+  if(e.target.id !== 'html-content-field') return;
+  const node = findById(state.tree, state.selectedId);
+  if(!node) return;
+  node.content = e.target.value;
+  refreshCanvasesAndCode();
+});
+ 
+function updateHtmlSidePanelCode(){
+  const lineObjs = buildHtmlLines();
+  document.getElementById('html-code-output').innerHTML = lineObjs.map(l => highlightHtmlLine(l.text)).join('\n');
+  document.getElementById('html-side-panel').dataset.plainText = lineObjs.map(l => l.text).join('\n');
+}
+document.getElementById('html-code-copy-btn').addEventListener('click', () => {
+  const text = document.getElementById('html-side-panel').dataset.plainText || '';
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('html-code-copy-btn');
+    const old = btn.textContent;
+    btn.textContent = 'copied!';
+    setTimeout(() => btn.textContent = old, 1200);
+  });
+});
+ 
 function updateAllCodePanels(){
-  htmlCodePanel.update();
+  updateHtmlSidePanelCode();
   cssCodePanel.update();
   jsCodePanel.update();
   fullCodePanel.update();
 }
  
-// used while typing inside the HTML canvas's own contenteditable text —
-// updates everything EXCEPT that canvas, so the cursor/focus isn't lost.
-function refreshContentOnly(){
-  renderDomTreeInto(document.getElementById('dom-tree-html'));
-  renderCssScreenCanvasOnly();
-  renderJsScreenCanvasOnly();
-  renderPreviewScreen();
-  updateAllCodePanels();
-}
- 
-// used while typing/dragging in the CSS property panel — safe to re-render
-// every canvas (none of them hold focus), but skips the panels themselves.
+// used while typing/dragging in the CSS property panel, or the HTML content
+// textarea — safe to re-render every canvas (none of them hold focus), but
+// skips the side panels themselves so the field being typed in keeps focus.
 function refreshCanvasesAndCode(){
   renderHtmlScreenCanvasOnly();
   renderCssScreenCanvasOnly();
@@ -2139,6 +2206,7 @@ function refreshCanvasesAndCode(){
 // panel legitimately needs to reflect the new state.
 function refreshStructural(){
   renderHtmlScreenCanvasOnly();
+  renderHtmlEditPanel();
   renderCssScreenCanvasOnly();
   renderJsScreenCanvasOnly();
   renderPreviewScreen();
@@ -2185,7 +2253,7 @@ function goto(name){
   document.getElementById('screen-' + name).classList.add('active');
   document.querySelectorAll('.app-step-btn').forEach(b => b.classList.toggle('active', b.dataset.step === name));
   positionStepIndicator(name);
-  if(name === 'html') renderHtmlScreenCanvasOnly();
+  if(name === 'html'){ renderHtmlScreenCanvasOnly(); renderHtmlEditPanel(); }
   if(name === 'css'){ renderCssScreenCanvasOnly(); renderPropPanel(); }
   if(name === 'js'){ renderJsScreenCanvasOnly(); renderJsBehaviorPanel(); renderActiveBehaviorsList(); }
   if(name === 'preview') renderPreviewScreen();
@@ -2195,21 +2263,19 @@ function goto(name){
 /* =========================================================================
    15. INIT
    ========================================================================= */
-let htmlCodePanel, cssCodePanel, jsCodePanel, fullCodePanel;
+let cssCodePanel, jsCodePanel, fullCodePanel;
  
 function init(){
   renderSteps();
   renderPalette();
  
   attachCanvasDragDrop(document.getElementById('canvas-scroll'), document.getElementById('canvas-page'));
-  wireCanvasEvents(document.getElementById('canvas-page'), {onSelect: selectNode, showChip:true, editableText:true});
-  wireCanvasEvents(document.getElementById('css-canvas-page'), {onSelect: selectNode, showChip:false, editableText:false});
+  wireCanvasEvents(document.getElementById('canvas-page'), {onSelect: selectNode});
+  wireCanvasEvents(document.getElementById('css-canvas-page'), {onSelect: selectNode});
  
-  wireDomTreeSelection(document.getElementById('dom-tree-html'), selectNode);
   wireDomTreeSelection(document.getElementById('dom-tree-css'), selectNode);
   wireDomTreeSelection(document.getElementById('dom-tree-js'), selectNode);
  
-  htmlCodePanel = setupCodePanel('html-code-panel', {title:'view generated HTML', getLines: buildHtmlLines, highlightLine: highlightHtmlLine});
   cssCodePanel  = setupCodePanel('css-code-panel',  {title:'view generated CSS',  getLines: buildCssLines,  highlightLine: highlightCssLine});
   jsCodePanel   = setupCodePanel('js-code-panel',   {title:'view generated JavaScript', getLines: buildJsLines, highlightLine: highlightJsLine});
   fullCodePanel = setupCodePanel('full-code-panel', {title:'view the full page code', getLines: buildFullCodeLines, highlightLine: highlightFullLine});
