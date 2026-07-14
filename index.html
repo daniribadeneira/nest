@@ -21,22 +21,29 @@
    THEME / DESIGN TOKENS
    ========================================================= */
 :root{
-  --bg:#171936;
-  --surface:#23264A;
-  --surface-alt:#2C3160;
-  --surface-raised:#383D74;
-  --line:#575D97;
-  --line-soft:#40456F;
-  --ink:#F7F6FF;
-  --muted:#C1BEE2;
-  --muted-dim:#918CB7;
-  --tag:#FFBC73;
-  --tag-dim:#63472A;
-  --string:#83F5D8;
-  --cta:#B096FF;
-  --cta-dim:#47306F;
-  --cta-ink:#FAF8FF;
-  --focus:#D0C3FF;
+  --bg:#0F1021;
+  --surface:#191B35;
+  --surface-alt:#23264A;
+  --surface-raised:#2E3260;
+
+  --line:#444980;
+  --line-soft:#30345F;
+
+  --ink:#F5F4FF;
+  --muted:#B3B0D8;
+  --muted-dim:#7D79A9;
+
+  --tag:#FFB86C;
+  --tag-dim:#533A22;
+
+  --string:#7CF7D4;
+
+  --cta:#A78BFA;
+  --cta-dim:#312459;
+  --cta-ink:#F8F5FF;
+
+  --focus:#C4B5FD;
+}
   --radius-sm:6px;
   --radius-md:10px;
   --radius-lg:14px;
@@ -535,25 +542,40 @@ button,input,select,textarea{font-family:inherit;}
       <button class="btn danger" id="html-reset-btn" style="margin-left:auto;">Reset page</button>
     </div>
     <div class="panel-shell">
-      <div class="panel" id="palette-panel">
-        <div class="panel-header">
-          <p class="panel-title">Elements</p>
-          <p class="panel-sub">Drag a piece onto the page →</p>
+     <div class="panel" id="html-prop-panel">
+    <div class="panel-header">
+        <div class="side-panel-toggle">
+            <button class="side-toggle-btn active"
+                    type="button"
+                    data-side-mode="edit">
+                Edit
+            </button>
+
+            <button class="side-toggle-btn"
+                    type="button"
+                    data-side-mode="code">
+                Code
+            </button>
         </div>
-        <div class="panel-body" id="palette-groups"></div>
-      </div>
-      <div class="panel" style="overflow:hidden;display:flex;flex-direction:column;">
-        <div class="canvas-scroll" id="canvas-scroll">
-          <div class="canvas-page" id="canvas-page" data-node-id="root"></div>
-        </div>
-      </div>
-      <div class="panel" id="html-side-panel">
-        <div class="panel-header">
-          <div class="side-panel-toggle">
-            <button class="side-toggle-btn active" type="button" data-side-mode="edit">Edit</button>
-            <button class="side-toggle-btn" type="button" data-side-mode="code">Code</button>
-          </div>
-        </div>
+    </div>
+
+    <div class="panel-body" id="html-edit-mode"></div>
+
+    <div class="side-code-view"
+         id="html-code-mode"
+         style="display:none;">
+
+        <pre><code id="html-code-output"></code></pre>
+
+        <button
+            class="btn"
+            id="html-code-copy-btn"
+            type="button">
+            Copy
+        </button>
+
+    </div>
+</div>
         <div class="panel-body" id="html-edit-mode"></div>
         <div class="side-code-view" id="html-code-mode" style="display:none;">
           <pre><code id="html-code-output"></code></pre>
@@ -565,66 +587,173 @@ button,input,select,textarea{font-family:inherit;}
  
   <!-- ============ CSS BUILDER ============ -->
   <section id="screen-css" class="screen">
-    <div class="panel-shell">
-      <div class="panel">
-        <div class="panel-header">
-          <p class="panel-title">Colors</p>
-          <p class="panel-sub">Your 5-color palette</p>
-        </div>
-        <div class="panel-body" id="color-roles"></div>
-        <div class="panel-header" style="border-top:1px solid var(--line-soft);margin-top:4px;">
-          <p class="panel-title">Layers</p>
-          <p class="panel-sub">Click something to style it</p>
-        </div>
-        <div class="dom-tree" id="dom-tree-css"></div>
+  <div class="panel-shell">
+
+    <!-- LEFT PANEL -->
+    <div class="panel">
+      <div class="panel-header">
+        <p class="panel-title">Colors</p>
+        <p class="panel-sub">Your 5-color palette</p>
       </div>
-      <div class="panel" style="overflow:hidden;display:flex;flex-direction:column;">
-        <div class="canvas-scroll" id="css-canvas-scroll">
-          <div class="canvas-page" id="css-canvas-page" data-node-id="root"></div>
-        </div>
+
+      <div class="panel-body" id="color-roles"></div>
+
+      <div class="panel-header" style="border-top:1px solid var(--line-soft);margin-top:4px;">
+        <p class="panel-title">Layers</p>
+        <p class="panel-sub">Click something to style it</p>
       </div>
-      <div class="panel" id="prop-panel">
-        <div class="panel-header">
+
+      <div class="dom-tree" id="dom-tree-css"></div>
+    </div>
+
+    <!-- CENTER PANEL -->
+    <div class="panel" style="overflow:hidden;display:flex;flex-direction:column;">
+      <div class="canvas-scroll" id="css-canvas-scroll">
+        <div class="canvas-page" id="css-canvas-page" data-node-id="root"></div>
+      </div>
+    </div>
+
+    <!-- RIGHT PANEL -->
+    <div class="panel" id="css-prop-panel">
+
+    <div class="panel-header">
+
+        <div>
+            <p class="panel-title" id="prop-panel-title">
+                Properties
+            </p>
+
+            <p class="panel-sub" id="prop-panel-sub">
+                Nothing selected
+            </p>
+        </div>
+
+        <div class="side-panel-toggle">
+
+            <button class="side-toggle-btn active"
+                    type="button"
+                    data-side-mode="edit">
+                Edit
+            </button>
+
+            <button class="side-toggle-btn"
+                    type="button"
+                    data-side-mode="code">
+                Code
+            </button>
+
+        </div>
+
+    </div>
+
+    <div id="css-edit-mode">
+        <div id="prop-panel-body"></div>
+    </div>
+
+    <div class="side-code-view"
+         id="css-code-mode"
+         style="display:none;">
+
+        <pre><code id="css-code-output"></code></pre>
+
+        <button
+            class="btn"
+            id="css-code-copy-btn"
+            type="button">
+            Copy
+        </button>
+
+    </div>
+
+</div>
+      <!-- EDIT MODE -->
+      <div id="css-edit-mode">
+        <div id="prop-panel-body"></div>
+      </div>
+
+      <!-- CODE MODE -->
+      <div
+        class="side-code-view"
+        id="css-code-mode"
+        style="display:none;">
+
+        <pre><code id="css-code-output"></code></pre>
+
+        <button
+          class="btn"
+          id="css-code-copy-btn">
+          Copy
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+</section>
+  <!-- ============ JS BUILDER ============ -->
+  <section id="screen-js" class="screen">
+  <div class="panel-shell">
+    <!-- LEFT PANEL -->
+    <div class="panel">
+      <div class="panel-header">
+        <p class="panel-title">Colors</p>
+        <p class="panel-sub">Your 5-color palette</p>
+      </div>
+      <div class="panel-body" id="color-roles"></div>
+      <div class="panel-header" style="border-top:1px solid var(--line-soft);margin-top:4px;">
+        <p class="panel-title">Layers</p>
+        <p class="panel-sub">Click something to style it</p>
+      </div>
+      <div class="dom-tree" id="dom-tree-js"></div>
+    </div>
+    <!-- CENTER PANEL -->
+    <div class="panel" style="overflow:hidden;display:flex;flex-direction:column;">
+      <div class="canvas-scroll" id="js-canvas-scroll">
+        <div class="canvas-page" id="js-canvas-page" data-node-id="root"></div>
+      </div>
+    </div>
+    <!-- RIGHT PANEL -->
+    <div class="panel" id="js-prop-panel">
+      <div class="panel-header">
+        <div>
           <p class="panel-title" id="prop-panel-title">Properties</p>
           <p class="panel-sub" id="prop-panel-sub">Nothing selected</p>
         </div>
+        <div class="side-panel-toggle">
+          <button
+            class="side-toggle-btn active"
+            type="button"
+            data-side-mode="edit">
+            Edit
+          </button>
+          <button
+            class="side-toggle-btn"
+            type="button"
+            data-side-mode="code">
+            Code
+          </button>
+        </div>
+      </div>
+      <!-- EDIT MODE -->
+      <div id="js-edit-mode">
         <div id="prop-panel-body"></div>
       </div>
-    </div>
-    <div class="code-panel" id="css-code-panel"></div>
-  </section>
- 
-  <!-- ============ JS BUILDER ============ -->
-  <section id="screen-js" class="screen">
-    <div class="panel-shell">
-      <div class="panel">
-        <div class="panel-header">
-          <p class="panel-title">Layers</p>
-          <p class="panel-sub">Pick something to make clickable</p>
-        </div>
-        <div class="dom-tree" id="dom-tree-js"></div>
-      </div>
-      <div class="panel" style="overflow:hidden;display:flex;flex-direction:column;">
-        <div class="canvas-scroll" id="js-canvas-scroll">
-          <p class="panel-sub" style="margin-bottom:12px;">Try it — click things below.</p>
-          <div class="canvas-page" id="js-canvas-page" data-node-id="root"></div>
-          <p class="js-status-line" id="js-preview-status"></p>
-        </div>
-      </div>
-      <div class="panel" id="js-behavior-panel">
-        <div class="panel-header">
-          <p class="panel-title" id="js-panel-title">Behavior</p>
-          <p class="panel-sub" id="js-panel-sub">Nothing selected</p>
-        </div>
-        <div class="panel-body" id="js-behavior-body"></div>
-        <div class="panel-header" style="border-top:1px solid var(--line-soft);">
-          <p class="panel-title">Active behaviors</p>
-        </div>
-        <div class="panel-body" id="active-behaviors"></div>
+      <!-- CODE MODE -->
+      <div
+        class="side-code-view"
+        id="js-code-mode"
+        style="display:none;">
+        <pre><code id="js-code-output"></code></pre>
+        <button
+          class="btn"
+          id="js-code-copy-btn">
+          Copy
+        </button>
       </div>
     </div>
-    <div class="code-panel" id="js-code-panel"></div>
-  </section>
+  </div>
+</section>
  
   <!-- ============ PREVIEW ============ -->
   <section id="screen-preview" class="screen">
@@ -2222,9 +2351,23 @@ document.getElementById('html-code-copy-btn').addEventListener('click', () => {
 });
  
 function updateAllCodePanels(){
+
   updateHtmlSidePanelCode();
-  cssCodePanel.update();
-  jsCodePanel.update();
+
+  const cssOutput = document.getElementById('css-code-output');
+  if(cssOutput){
+    cssOutput.innerHTML = buildCssLines()
+      .map(l => highlightCssLine(l.text))
+      .join('\n');
+  }
+
+  const jsOutput = document.getElementById('js-code-output');
+  if(jsOutput){
+    jsOutput.innerHTML = buildJsLines()
+      .map(l => highlightJsLine(l.text))
+      .join('\n');
+  }
+
   fullCodePanel.update();
 }
  
@@ -2322,6 +2465,48 @@ function init(){
   refreshStructural();
   goto('start');
 }
+function setupSidePanelToggle(panelId, editId, codeId){
+
+  const panel = document.getElementById(panelId);
+  if(!panel) return;
+
+  const buttons = panel.querySelectorAll('.side-toggle-btn');
+  const edit = document.getElementById(editId);
+  const code = document.getElementById(codeId);
+
+  buttons.forEach(btn => {
+
+    btn.addEventListener('click', () => {
+
+      buttons.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      if(btn.dataset.sideMode === 'edit'){
+        edit.style.display = '';
+        code.style.display = 'none';
+      }else{
+        edit.style.display = 'none';
+        code.style.display = '';
+        updateAllCodePanels();
+      }
+
+    });
+
+  });
+
+}   
+setupSidePanelToggle(
+    'css-prop-panel',
+    'css-edit-mode',
+    'css-code-mode'
+);
+
+setupSidePanelToggle(
+    'js-prop-panel',
+    'js-edit-mode',
+    'js-code-mode'
+);
+
 init();
  
 </script>
