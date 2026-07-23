@@ -7,7 +7,7 @@
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
   gtag('js', new Date());
-
+ 
   gtag('config', 'G-HX4TF5BD7S');
 </script>
 <meta charset="UTF-8">
@@ -585,13 +585,24 @@ button,input,select,textarea{font-family:inherit;}
       </div>
       <div class="panel" id="prop-panel">
         <div class="panel-header">
-          <p class="panel-title" id="prop-panel-title">Properties</p>
-          <p class="panel-sub" id="prop-panel-sub">Nothing selected</p>
+          <div class="side-panel-toggle">
+            <button class="side-toggle-btn active" type="button" data-css-side-mode="edit">Edit</button>
+            <button class="side-toggle-btn" type="button" data-css-side-mode="code">Code</button>
+          </div>
         </div>
-        <div id="prop-panel-body"></div>
+        <div id="css-edit-mode">
+          <div class="panel-header" style="border-top:1px solid var(--line-soft);">
+            <p class="panel-title" id="prop-panel-title">Properties</p>
+            <p class="panel-sub" id="prop-panel-sub">Nothing selected</p>
+          </div>
+          <div id="prop-panel-body"></div>
+        </div>
+        <div class="side-code-view" id="css-code-mode" style="display:none;">
+          <pre><code id="css-code-output"></code></pre>
+          <button class="btn" id="css-code-copy-btn" type="button">copy</button>
+        </div>
       </div>
     </div>
-    <div class="code-panel" id="css-code-panel"></div>
   </section>
  
   <!-- ============ JS BUILDER ============ -->
@@ -613,17 +624,28 @@ button,input,select,textarea{font-family:inherit;}
       </div>
       <div class="panel" id="js-behavior-panel">
         <div class="panel-header">
-          <p class="panel-title" id="js-panel-title">Behavior</p>
-          <p class="panel-sub" id="js-panel-sub">Nothing selected</p>
+          <div class="side-panel-toggle">
+            <button class="side-toggle-btn active" type="button" data-js-side-mode="edit">Edit</button>
+            <button class="side-toggle-btn" type="button" data-js-side-mode="code">Code</button>
+          </div>
         </div>
-        <div class="panel-body" id="js-behavior-body"></div>
-        <div class="panel-header" style="border-top:1px solid var(--line-soft);">
-          <p class="panel-title">Active behaviors</p>
+        <div id="js-edit-mode">
+          <div class="panel-header" style="border-top:1px solid var(--line-soft);">
+            <p class="panel-title" id="js-panel-title">Behavior</p>
+            <p class="panel-sub" id="js-panel-sub">Nothing selected</p>
+          </div>
+          <div class="panel-body" id="js-behavior-body"></div>
+          <div class="panel-header" style="border-top:1px solid var(--line-soft);">
+            <p class="panel-title">Active behaviors</p>
+          </div>
+          <div class="panel-body" id="active-behaviors"></div>
         </div>
-        <div class="panel-body" id="active-behaviors"></div>
+        <div class="side-code-view" id="js-code-mode" style="display:none;">
+          <pre><code id="js-code-output"></code></pre>
+          <button class="btn" id="js-code-copy-btn" type="button">copy</button>
+        </div>
       </div>
     </div>
-    <div class="code-panel" id="js-code-panel"></div>
   </section>
  
   <!-- ============ PREVIEW ============ -->
@@ -866,6 +888,29 @@ function styleToDeclarations(node){
     decls.push(['height', s.height === 'auto' ? 'auto' : `${s.height}px`]);
   }
  
+  // buttons: always block-level and single-line, regardless of where they sit,
+  // so two buttons can never render side by side — width/position controls
+  // (below) place the button's own box within that line.
+  if(def.tag === 'button'){
+    decls.push(['display','block']);
+    if(!s.width) decls.push(['width','fit-content']);
+    let parentLayout = 'vertical';
+    const parentId = getParentIdOf(node.id);
+    if(parentId !== 'root'){
+      const parentNode = findById(state.tree, parentId);
+      if(parentNode) parentLayout = parentNode.style.layout || 'vertical';
+    }
+    if(parentLayout !== 'vertical'){
+      // row-direction parent: force the button onto its own line via the
+      // wrapping flex row instead of letting it sit beside a sibling.
+      decls.push(['flex-basis','100%']);
+    }
+    const align = s.buttonAlign || 'left';
+    if(align === 'center') decls.push(['margin-left','auto'],['margin-right','auto']);
+    else if(align === 'right') decls.push(['margin-left','auto'],['margin-right','0']);
+    else decls.push(['margin-left','0'],['margin-right','auto']);
+  }
+ 
   // spacing — individual sides
   ['Top','Right','Bottom','Left'].forEach(side => {
     const mKey = 'margin' + side, pKey = 'padding' + side;
@@ -1076,7 +1121,7 @@ function highlightJsLine(text){
 }
  
 /* =========================================================================
-   8. REUSABLE CODE PANEL COMPONENT
+   8. REUSABLE CODE PANEL COMPONENTS
    ========================================================================= */
 function setupCodePanel(panelId, opts){
   const panel = document.getElementById(panelId);
@@ -1127,6 +1172,44 @@ function setupCodePanel(panelId, opts){
       return `<span class="${cls}"${idAttr}>${opts.highlightLine(l.text, l)}</span>`;
     }).join('\n');
     panel.dataset.plainText = lineObjs.map(l => l.text).join('\n');
+    prevTexts = lineObjs.map(l => l.text);
+  }
+  return {update};
+}
+ 
+// like setupCodePanel, but for a code view that's already visible inside a
+// side-panel Edit/Code toggle rather than its own collapsible bottom bar.
+function setupSideCodeView(codeElId, copyBtnId, dataOwnerId, opts){
+  const codeEl = document.getElementById(codeElId);
+  const copyBtn = document.getElementById(copyBtnId);
+  const owner = document.getElementById(dataOwnerId);
+  let prevTexts = [];
+ 
+  copyBtn.addEventListener('click', () => {
+    navigator.clipboard.writeText(owner.dataset.plainText || '').then(() => {
+      const old = copyBtn.textContent;
+      copyBtn.textContent = 'copied!';
+      setTimeout(() => copyBtn.textContent = old, 1200);
+    });
+  });
+ 
+  codeEl.addEventListener('mouseover', e => {
+    const line = e.target.closest('.code-line[data-node-id]');
+    if(line){ state.hoveredId = line.dataset.nodeId; syncHoverHighlights(); highlightHoveredInCanvases(); }
+  });
+  codeEl.addEventListener('mouseleave', () => {
+    state.hoveredId = null; syncHoverHighlights(); highlightHoveredInCanvases();
+  });
+ 
+  function update(){
+    const lineObjs = opts.getLines();
+    codeEl.innerHTML = lineObjs.map((l, i) => {
+      const changed = prevTexts[i] !== l.text;
+      const cls = 'code-line' + (l.id ? ' hoverable' : '') + (changed ? ' code-line-flash' : '');
+      const idAttr = l.id ? ` data-node-id="${l.id}"` : '';
+      return `<span class="${cls}"${idAttr}>${opts.highlightLine(l.text, l)}</span>`;
+    }).join('\n');
+    owner.dataset.plainText = lineObjs.map(l => l.text).join('\n');
     prevTexts = lineObjs.map(l => l.text);
   }
   return {update};
@@ -1359,6 +1442,11 @@ const LAYOUT_OPTIONS = [
   {value:'horizontal', label:'Horizontal'},
   {value:'horizontal-space-between', label:'Horizontal (space-between)'}
 ];
+const BUTTON_POSITION_OPTIONS = [
+  {value:'left', label:'Left'},
+  {value:'center', label:'Middle'},
+  {value:'right', label:'Right'}
+];
  
 const propSectionCollapsed = {};
  
@@ -1475,9 +1563,12 @@ function renderTypographySection(node){
  
 function renderLayoutSection(node){
   const s = node.style;
+  const def = ELEMENT_DEFS[node.key];
+  const isContainer = def.kind === 'container';
+  const isButton = def.tag === 'button';
   const widthMode = !s.width ? '' : (s.width === 'fill' ? 'fill' : 'custom');
   const heightMode = !s.height ? '' : (s.height === 'auto' ? '' : 'custom');
-  return propSection('Layout', `
+  const directionGapHtml = isContainer ? `
     <div class="prop-row">
       <label class="prop-label">Direction</label>
       <select class="prop-select" data-style="layout">
@@ -1488,6 +1579,17 @@ function renderLayoutSection(node){
       <label class="prop-label">Gap</label>
       <input class="prop-input" type="number" min="0" data-style-num="gap" value="${s.gap !== undefined ? s.gap : 0}" placeholder="0">
     </div>
+  ` : '';
+  const positionHtml = isButton ? `
+    <div class="prop-row">
+      <label class="prop-label">Position</label>
+      <select class="prop-select" data-style="buttonAlign">
+        ${BUTTON_POSITION_OPTIONS.map(o => `<option value="${o.value}" ${(s.buttonAlign || 'left') === o.value ? 'selected' : ''}>${o.label}</option>`).join('')}
+      </select>
+    </div>
+  ` : '';
+  return propSection('Layout', `
+    ${directionGapHtml}
     <div class="prop-row">
       <label class="prop-label">Width</label>
       <select class="prop-select" data-width-mode>
@@ -1505,6 +1607,7 @@ function renderLayoutSection(node){
       </select>
       ${heightMode === 'custom' ? `<input class="prop-input" type="number" min="0" data-style-num="height" value="${s.height}" style="max-width:64px;">` : ''}
     </div>
+    ${positionHtml}
   `, 'layout');
 }
  
@@ -1868,6 +1971,16 @@ function findRenderedEl(containerEl, nodeId){
   return containerEl.querySelector(`[data-node-id="${nodeId}"]`);
 }
  
+// creates the same floating "toast" popup used for both the popup behavior
+// and the link behavior's "Go to →" preview, so both feel identical.
+function showFloatingPopup(message){
+  const popup = document.createElement('div');
+  popup.textContent = message;
+  popup.style.cssText = 'position:fixed;top:20px;right:20px;background:#222;color:#fff;padding:14px 18px;border-radius:8px;z-index:99999;font-family:Inter,sans-serif;font-size:13px;box-shadow:0 8px 24px rgba(0,0,0,.3);max-width:320px;word-break:break-word;';
+  document.body.appendChild(popup);
+  setTimeout(() => popup.remove(), 2600);
+}
+ 
 // attaches REAL working behaviors to a rendered container (used by the js
 // screen's test canvas and the final preview) so clicking actually works.
 function attachLiveInteractions(containerEl, statusElId){
@@ -1886,7 +1999,11 @@ function attachLiveInteractions(containerEl, statusElId){
         announce(`Toggled ${elLabel(cfg.targetId).replace(/&lt;|&gt;/g, m => m === '&lt;' ? '<' : '>')}`);
       });
     } else if(cfg.behavior === 'link' && cfg.url){
-      triggerEl.addEventListener('click', e => { e.preventDefault(); announce(`Would go to: ${cfg.url}`); });
+      triggerEl.addEventListener('click', e => {
+        e.preventDefault();
+        showFloatingPopup(`Go to → ${cfg.url}`);
+        announce(`Would go to: ${cfg.url}`);
+      });
     } else if(cfg.behavior === 'scroll' && cfg.targetId){
       triggerEl.addEventListener('click', () => {
         const t = findRenderedEl(containerEl, cfg.targetId);
@@ -1895,11 +2012,7 @@ function attachLiveInteractions(containerEl, statusElId){
       });
     } else if(cfg.behavior === 'popup'){
       triggerEl.addEventListener('click', () => {
-        const popup = document.createElement('div');
-        popup.textContent = cfg.message || '';
-        popup.style.cssText = 'position:fixed;top:20px;right:20px;background:#222;color:#fff;padding:14px 18px;border-radius:8px;z-index:99999;font-family:Inter,sans-serif;font-size:13px;box-shadow:0 8px 24px rgba(0,0,0,.3);';
-        document.body.appendChild(popup);
-        setTimeout(() => popup.remove(), 2600);
+        showFloatingPopup(cfg.message || '');
         announce('Popup shown');
       });
     } else if(cfg.behavior === 'alert'){
@@ -2178,6 +2291,26 @@ document.querySelectorAll('#html-side-panel .side-toggle-btn').forEach(btn => {
   btn.addEventListener('click', () => setHtmlSideMode(btn.dataset.sideMode));
 });
  
+// --- css screen: Edit / Code toggle side panel ---
+function setCssSideMode(mode){
+  document.querySelectorAll('#prop-panel .side-toggle-btn').forEach(b => b.classList.toggle('active', b.dataset.cssSideMode === mode));
+  document.getElementById('css-edit-mode').style.display = mode === 'edit' ? 'block' : 'none';
+  document.getElementById('css-code-mode').style.display = mode === 'code' ? 'block' : 'none';
+}
+document.querySelectorAll('#prop-panel .side-toggle-btn').forEach(btn => {
+  btn.addEventListener('click', () => setCssSideMode(btn.dataset.cssSideMode));
+});
+ 
+// --- js screen: Edit / Code toggle side panel ---
+function setJsSideMode(mode){
+  document.querySelectorAll('#js-behavior-panel .side-toggle-btn').forEach(b => b.classList.toggle('active', b.dataset.jsSideMode === mode));
+  document.getElementById('js-edit-mode').style.display = mode === 'edit' ? 'block' : 'none';
+  document.getElementById('js-code-mode').style.display = mode === 'code' ? 'block' : 'none';
+}
+document.querySelectorAll('#js-behavior-panel .side-toggle-btn').forEach(btn => {
+  btn.addEventListener('click', () => setJsSideMode(btn.dataset.jsSideMode));
+});
+ 
 function renderHtmlEditPanel(){
   const wrap = document.getElementById('html-edit-mode');
   const node = state.selectedId ? findById(state.tree, state.selectedId) : null;
@@ -2313,8 +2446,8 @@ function init(){
   wireDomTreeSelection(document.getElementById('dom-tree-css'), selectNode);
   wireDomTreeSelection(document.getElementById('dom-tree-js'), selectNode);
  
-  cssCodePanel  = setupCodePanel('css-code-panel',  {title:'view generated CSS',  getLines: buildCssLines,  highlightLine: highlightCssLine});
-  jsCodePanel   = setupCodePanel('js-code-panel',   {title:'view generated JavaScript', getLines: buildJsLines, highlightLine: highlightJsLine});
+  cssCodePanel  = setupSideCodeView('css-code-output', 'css-code-copy-btn', 'css-code-mode', {getLines: buildCssLines, highlightLine: highlightCssLine});
+  jsCodePanel   = setupSideCodeView('js-code-output', 'js-code-copy-btn', 'js-code-mode', {getLines: buildJsLines, highlightLine: highlightJsLine});
   fullCodePanel = setupCodePanel('full-code-panel', {title:'view the full page code', getLines: buildFullCodeLines, highlightLine: highlightFullLine});
  
   document.getElementById('start-btn').addEventListener('click', () => goto('html'));
